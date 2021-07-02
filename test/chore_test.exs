@@ -2,7 +2,7 @@ defmodule ChoreTest do
   use ExUnit.Case
   alias Chore.TestChore
 
-  describe "run/3" do
+  describe "run_chore/3" do
     test "Runs a chore with valid inputs" do
       assert {:ok, result} =
                Chore.run_chore(
@@ -61,6 +61,28 @@ defmodule ChoreTest do
                )
 
       assert Keyword.get(errors, :my_file) == {:does_not_exist, "test/support/bad_file.txt"}
+    end
+  end
+
+  describe "run_chore/3 while distributed" do
+    setup do
+      node = :"secondary@127.0.0.1"
+      Chore.TestCluster.spawn([node])
+      {:ok, %{node: node}}
+    end
+
+    test "Does not allow a chore to run at the same time on separate nodes", %{node: node} do
+      input = %{
+        my_string: "string",
+        my_float: 4.2,
+        my_file: "test/support/test_file.txt",
+        sleep_length: 5000,
+        sleep?: true
+      }
+
+      :rpc.async_call(node, Chore, :run_chore, [TestChore, input, 1000])
+
+      assert {:error, :asdf} = Chore.run_chore(TestChore, input, 6000)
     end
   end
 end
