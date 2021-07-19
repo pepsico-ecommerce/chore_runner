@@ -1,0 +1,7 @@
+<ul class="running-chores">
+  <%= for chore <- @running_chores do %>
+  <li class="running-chore" id="<%= inspect chore.ref %>">
+    <%= live_component(ChoreItemComponent, chore: chore) %>
+  </li>
+  <% end %>
+</ul>

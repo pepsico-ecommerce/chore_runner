@@ -1,0 +1,14 @@
+<div class="chore-item">
+  <div class="chore-item-name"><%= @chore.mod %></div>
+  <div class="chore-item-recentlog">
+    <%= first_log(@chore.state.logs) %>
+  </div>
+  <div class="chore-item-stats">
+    <div class="chore-item-stats-scalar">
+      <%= @chore.state.scalar %>
+    </div>
+    <div class="chore-item-stats-percent">
+      (<%= @chore.state.percent %>%)
+    </div>
+  </div>
+</div>
