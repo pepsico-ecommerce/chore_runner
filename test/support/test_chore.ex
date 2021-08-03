@@ -1,5 +1,5 @@
-defmodule Chore.TestChore do
-  use Chore
+defmodule ChoreRunner.TestChore do
+  use ChoreRunner.Chore
 
   input :my_string, :string
   input :my_float, :float

@@ -1,4 +1,4 @@
-defmodule Chore.TestCluster do
+defmodule ChoreRunner.TestCluster do
   @moduledoc """
   From Chris McCord's PubSub Library test suite
   https://github.com/phoenixframework/phoenix_pubsub/blob/master/test/support/cluster.ex

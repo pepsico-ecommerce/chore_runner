@@ -1,6 +1,6 @@
-defmodule Chore.Server do
+defmodule ChoreRunner.Server do
   use GenServer
-  alias Chore.{ChoreSupervisor, Reporter}
+  alias ChoreRunner.{ChoreSupervisor, Reporter}
 
   def start_link(opts) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
@@ -13,8 +13,8 @@ defmodule Chore.Server do
 
   @impl true
   def handle_call({:run_chore, chore_mod, input, opts}, {from, _}, state) do
-    with {:ok, input} <- chore_mod.validate_input(input),
-         {:ok, task, ref} <- do_start_chore(chore_mod, input, opts) do
+    with {:ok, validated_input} <- chore_mod.validate_input(input),
+         {:ok, task, ref} <- do_start_chore(chore_mod, validated_input, opts) do
       {:reply, {:ok, ref},
        put_in(state, [:chores, task.ref], %{task: task, mod: chore_mod, ref: ref, caller: from})}
     else
@@ -79,7 +79,7 @@ defmodule Chore.Server do
 
     receive do
       {:locked, ^ref} ->
-        Chore.Reporter.register_task(task, chore_mod, ref, subscribers)
+        ChoreRunner.Reporter.register_task(task, chore_mod, ref, subscribers)
         send(task.pid, {:registered, ref})
         {:ok, task, ref}
     after

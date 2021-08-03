@@ -1,10 +1,10 @@
-defmodule Chore do
+defmodule ChoreRunner do
   @moduledoc """
-  Behaviour for new Chores as well as an api for running Chores
+  Runs Chores
   Example of writing a Chore:
   ```elixir
   defmodule MyApp.MyChore do
-    use Chore
+    use ChoreRunner.Chore
 
     input :my_file, :file
 
@@ -16,38 +16,23 @@ defmodule Chore do
     end
   end
   ```
-  Example of running this Chore:
+  Example of running this ChoreRunner:
   ```
-  iex> Chore.run_chore(MyApp.MyChore, %{my_file: file}, :infinity)
+  iex> ChoreRunner.run_chore(MyApp.MyChore, %{my_file: file}, :infinity)
   {:ok, ...}
   ```
   """
-  require Chore.DSL
-  alias Chore.{Server, DSL}
-
-  defstruct logs: [], percent: 0, scalar: 0
-
-  defmacro __using__(_args), do: DSL.using()
-
-  @callback restriction :: :none | :self | :global
-  @callback run(map()) :: {:ok, any()} | {:error, any()}
-
-  @type unix_timestamp :: integer()
-  @type t :: %__MODULE__{
-          logs: [{unix_timestamp, String.t()}],
-          percent: integer(),
-          scalar: integer()
-        }
+  alias ChoreRunner.{Server, Chore}
 
   @doc false
   def child_spec(opts) do
     %{
-      id: Chore.Supervisor,
-      start: {Chore.Supervisor, :start_link, [opts]}
+      id: ChoreRunner.Supervisor,
+      start: {ChoreRunner.Supervisor, :start_link, [opts]}
     }
   end
 
-  @spec list_running_chores() :: [t()]
+  @spec list_running_chores() :: [Chore.t()]
   def list_running_chores do
     {replies, _} = GenServer.multi_call(Server, :list_chores)
     Enum.flat_map(replies, fn {_, chores} -> chores end)

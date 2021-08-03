@@ -1,15 +1,15 @@
-defmodule Chore.DSL do
+defmodule ChoreRunner.DSL do
   @moduledoc """
   Macros which enable the chore DSL
   """
-  require Chore.Input
-  alias Chore.Input
+  require ChoreRunner.Input
+  alias ChoreRunner.Input
 
   def using do
     quote do
-      @behaviour Chore
-      import Chore.DSL, only: [input: 2, input: 3, validate: 1]
-      import Chore.Reporter, only: [report_percent: 1, report_scalar: 1, log: 1]
+      @behaviour ChoreRunner.Chore
+      import ChoreRunner.DSL, only: [input: 2, input: 3, validate: 1]
+      import ChoreRunner.Reporter, only: [report_percent: 1, report_scalar: 1, log: 1]
 
       Module.register_attribute(__MODULE__, :chore_input, accumulate: true)
       Module.register_attribute(__MODULE__, :chore_input_validators, accumulate: true)
@@ -33,11 +33,12 @@ defmodule Chore.DSL do
 
       quote do
         def __validate_input__(unquote(key), value) do
-          with {:ok, value} <- Input.validate(unquote(type), value),
-               :ok <- __do_other_validations__(unquote(key), value) do
-            {:ok, {unquote(key), value}}
+          with {:ok, validated_value} <- Input.validate(unquote(type), value),
+               :ok <- __do_other_validations__(unquote(key), validated_value) do
+            {:ok, {unquote(key), validated_value}}
           else
-            {:error, reason} -> {:error, {reason, value}}
+            {:error, reasons} when is_list(reasons) -> {:error, reasons}
+            {:error, reason} -> {:error, [reason]}
           end
         end
 
@@ -61,19 +62,39 @@ defmodule Chore.DSL do
 
   defmacro __before_compile__(_) do
     quote do
+      @__key_map__ @chore_input
+                   |> Enum.map(fn {key, _type} -> {"#{key}", key} end)
+                   |> Enum.into(%{})
+      @__string_inputs__ Map.keys(@__key_map__)
+      @__atom_inputs__ Enum.map(@chore_input, fn {key, _} -> key end)
+      defp atomify_valid_keys(input) do
+        input
+        |> Stream.map(fn
+          {key, val} when key in @__string_inputs__ ->
+            {@__key_map__[key], val}
+
+          no_match ->
+            no_match
+        end)
+        |> Enum.into(%{})
+      end
+
       def validate_input(input) do
-        Enum.reduce(input, {true, []}, fn {key, val}, {valid?, errors} ->
+        casted_input = atomify_valid_keys(input)
+
+        casted_input
+        |> Enum.reduce([], fn {key, val}, errors ->
           case __MODULE__.__validate_input__(key, val) do
             {:ok, _} ->
-              {valid?, errors}
+              errors
 
             {:error, reason} ->
-              {false, [{key, reason} | errors]}
+              [{key, reason} | errors]
           end
         end)
         |> case do
-          {true, _} -> {:ok, input}
-          {false, errors} -> {:error, errors}
+          [] -> {:ok, casted_input}
+          errors -> {:error, errors}
         end
       end
 

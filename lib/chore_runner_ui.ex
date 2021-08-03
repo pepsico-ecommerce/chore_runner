@@ -1,11 +1,11 @@
-defmodule ChoreUI do
+defmodule ChoreRunnerUI do
   @moduledoc false
   @pubsub_topic "chore_live_ui:*"
   def view do
     quote do
       use Phoenix.View,
-        root: "lib/chore_ui/templates",
-        namespace: ChoreUI
+        root: "lib/chore_runner_ui/templates",
+        namespace: ChoreRunnerUI
 
       import Phoenix.Controller,
         only: [get_flash: 1, get_flash: 2, view_module: 1, view_template: 1]
@@ -17,7 +17,7 @@ defmodule ChoreUI do
   def live do
     quote do
       use Phoenix.LiveView,
-        layout: {ChoreUI.ChoreView, "live.html"}
+        layout: {ChoreRunnerUI.ChoreView, "live.html"}
 
       unquote(view_helpers())
     end

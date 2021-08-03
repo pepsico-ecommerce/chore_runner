@@ -1,11 +1,11 @@
 defmodule ChoreTest do
   use ExUnit.Case
-  alias Chore.TestChore
+  alias ChoreRunner.TestChore
 
   describe "run_chore/3" do
     test "Runs a chore with valid inputs" do
       assert {:ok, result} =
-               Chore.run_chore(
+               ChoreRunner.run_chore(
                  TestChore,
                  %{
                    my_string: "string",
@@ -27,7 +27,7 @@ defmodule ChoreTest do
 
     test "Rejects a chore with invalid inputs" do
       assert {:error, errors} =
-               Chore.run_chore(
+               ChoreRunner.run_chore(
                  TestChore,
                  %{
                    my_string: :atom,
@@ -48,7 +48,7 @@ defmodule ChoreTest do
 
     test "Rejects a chore with a nonexistant file" do
       assert {:error, errors} =
-               Chore.run_chore(
+               ChoreRunner.run_chore(
                  TestChore,
                  %{
                    my_string: "string",
@@ -67,7 +67,7 @@ defmodule ChoreTest do
   describe "run_chore/3 while distributed" do
     setup do
       node = :"secondary@127.0.0.1"
-      Chore.TestCluster.spawn([node])
+      ChoreRunner.TestCluster.spawn([node])
       {:ok, %{node: node}}
     end
 
@@ -80,9 +80,9 @@ defmodule ChoreTest do
         sleep?: true
       }
 
-      :rpc.async_call(node, Chore, :run_chore, [TestChore, input, 1000])
+      :rpc.async_call(node, ChoreRunner, :run_chore, [TestChore, input, 1000])
 
-      assert {:error, :asdf} = Chore.run_chore(TestChore, input, 6000)
+      assert {:error, :asdf} = ChoreRunner.run_chore(TestChore, input, 6000)
     end
   end
 end

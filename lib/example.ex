@@ -1,6 +1,6 @@
-defmodule Chore.Example do
-  use Chore
-  alias Chore.Reporter
+defmodule ChoreRunner.Example do
+  use ChoreRunner.Chore
+  alias ChoreRunner.Reporter
 
   input :str, :string do
     validate(&validate_str1/1)

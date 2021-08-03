@@ -1,0 +1,22 @@
+<div class="chore-menu">
+  <%= f = form_for :run_chore, "#", [phx_submit: :run_chore, phx_change: :form_changed] %>
+    <div class="chore-form-flexbox">
+      <%= select f, :chore, @form_chores, selected: @form_selected_chore, class: "chore-form-select", promt: "Select a Chore" %>
+      <div class="chore-form-inputs-flexbox">
+        <%= for ff <- inputs_for(f, :chore_attrs) do %>
+          <%= for {key, type} <- @inputs do %>
+            <%= render(__MODULE__, "chore_inputs.html", Map.merge(assigns, %{type: type, key: key, form: ff})) %>
+          <% end %>
+        <% end %>
+      </div>
+      <%= submit "Run Chore", class: "chore-run-submit-button", disabled: not @is_chore_valid %>
+    </div>
+  </form>
+</div>
+<ul class="running-chores">
+  <%= for chore <- @running_chores do %>
+  <li class="running-chore" id="<%= inspect chore.ref %>">
+    <%= live_component(ChoreItemComponent, chore: chore) %>
+  </li>
+  <% end %>
+</ul>

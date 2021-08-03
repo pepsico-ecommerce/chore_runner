@@ -1,6 +1,7 @@
-defmodule Chore.Reporter do
+defmodule ChoreRunner.Reporter do
   use GenServer
   require Logger
+  alias ChoreRunner.Chore
 
   def init(opts) do
     :ets.new(__MODULE__, [:named_table, :set, :protected, read_concurrency: true])
@@ -9,7 +10,7 @@ defmodule Chore.Reporter do
       :persistent_term.put({__MODULE__, :pubsub}, pubsub)
     else
       Logger.warn(
-        "Chore was started without the `:pubsub` option, chore reporting via pubsub is disabled. This will prevent `ChoreUI` from functioning properly"
+        "ChoreRunner was started without the `:pubsub` option, chore reporting via pubsub is disabled. This will prevent `ChoreRunnerUI` from functioning properly"
       )
     end
 
@@ -90,7 +91,7 @@ defmodule Chore.Reporter do
   defp do_report(type, value) do
     case :ets.lookup(__MODULE__, self()) do
       [{pid, ref, mod, pids, pubsub_topics, _state}] ->
-        if type == :log, do: Logger.info(" [Chore] [#{mod}] #{elem(value, 1)}")
+        if type == :log, do: Logger.info(" [ChoreRunner] [#{mod}] #{elem(value, 1)}")
         update_state(pid, type, value)
         do_send_reports(build_report(type, mod, ref, value), pids, pubsub_topics)
 
@@ -113,7 +114,7 @@ defmodule Chore.Reporter do
         Phoenix.PubSub.broadcast(pubsub, topic, report)
       end)
 
-      Phoenix.PubSub.broadcast(pubsub, ChoreUI.pubsub_topic(), report)
+      Phoenix.PubSub.broadcast(pubsub, ChoreRunnerUI.pubsub_topic(), report)
     end
   end
 
