@@ -4,7 +4,17 @@ defmodule ChoreRunner.Chore do
   """
   require ChoreRunner.DSL
   alias ChoreRunner.DSL
-  defstruct logs: [], percent: 0, scalar: 0
+
+  defstruct id: nil,
+            mod: nil,
+            logs: [],
+            values: %{},
+            task: nil,
+            reporter: nil,
+            started_at: nil,
+            finished_at: nil,
+            result: nil
+
   defmacro __using__(_args), do: DSL.using()
 
   @callback restriction :: :none | :self | :global
@@ -12,8 +22,18 @@ defmodule ChoreRunner.Chore do
 
   @type unix_timestamp :: integer()
   @type t :: %__MODULE__{
+          id: String.t(),
+          mod: module(),
           logs: [{unix_timestamp, String.t()}],
-          percent: integer(),
-          scalar: integer()
+          values: %{atom() => number()},
+          task: Task.t(),
+          reporter: pid(),
+          started_at: DateTime.t(),
+          finished_at: DateTime.t(),
+          result: any()
         }
+
+  def validate_input(%__MODULE__{mod: _mod}, input) do
+    {:ok, input}
+  end
 end

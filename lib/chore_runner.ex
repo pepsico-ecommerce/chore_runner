@@ -22,7 +22,7 @@ defmodule ChoreRunner do
   {:ok, ...}
   ```
   """
-  alias ChoreRunner.{Server, Chore}
+  alias ChoreRunner.{Chore, ReporterSupervisor, Reporter}
 
   @doc false
   def child_spec(opts) do
@@ -34,16 +34,55 @@ defmodule ChoreRunner do
 
   @spec list_running_chores() :: [Chore.t()]
   def list_running_chores do
-    {replies, _} = GenServer.multi_call(Server, :list_chores)
-    Enum.flat_map(replies, fn {_, chores} -> chores end)
+    __MODULE__
+    |> :pg.get_members(Reporter)
+    |> Task.async_stream(fn pid -> GenServer.call(pid, :chore_state) end)
+    |> Enum.flat_map(fn
+      {:ok, chore} -> [chore]
+      _ -> []
+    end)
+  end
+
+  @spec chore_pubsub_topic(Chore.t()) :: String.t()
+  def chore_pubsub_topic(%Chore{id: id}) do
+    "chore_runner:id-#{id}"
   end
 
   @spec run_chore(module(), map(), Keyword.t()) :: {:ok, reference()} | {:error, any()}
   def run_chore(chore_mod, input, opts \\ []) do
-    GenServer.call(
-      Server,
-      {:run_chore, chore_mod, input, opts},
-      Keyword.get(opts, :call_timeout, 2000)
-    )
+    chore = %Chore{mod: chore_mod, id: gen_id()}
+
+    with {:ok, validated_input} <- Chore.validate_input(chore, input),
+         {:ok, updated_chore = %Chore{reporter: pid}} when not is_nil(pid) <-
+           do_start_reporter(chore, opts),
+         {:ok, started_chore} <- do_start_chore(updated_chore, validated_input, opts) do
+      {:ok, started_chore}
+    else
+      {:error, reason} ->
+        reason
+    end
+  end
+
+  defp gen_id do
+    16
+    |> :crypto.strong_rand_bytes()
+    |> Base.encode16()
+  end
+
+  defp do_start_reporter(%Chore{} = chore, opts) do
+    with {:ok, pid} <-
+           DynamicSupervisor.start_child(
+             ReporterSupervisor,
+             {Reporter, Keyword.put(opts, :chore, chore)}
+           ),
+         :ok <- :pg.join(ChoreRunner, Reporter, pid) do
+      {:ok, %Chore{chore | reporter: pid}}
+    end
+  end
+
+  defp do_start_chore(%Chore{reporter: reporter_pid}, input, opts) do
+    # Start the task from the reporter so that the task reports to the reporter server
+
+    {:ok, GenServer.call(reporter_pid, {:start_chore_task, input, opts})}
   end
 end

@@ -1,134 +1,162 @@
 defmodule ChoreRunner.Reporter do
   use GenServer
   require Logger
-  alias ChoreRunner.Chore
+  alias ChoreRunner.{Chore, ChoreSupervisor}
 
-  def init(opts) do
-    :ets.new(__MODULE__, [:named_table, :set, :protected, read_concurrency: true])
+  @process_dict_key :chore_reporter_pid
+  def init({opts, chore}) do
+    pubsub = Keyword.get(opts, :pubsub)
 
-    if pubsub = Keyword.get(opts, :pubsub) do
-      :persistent_term.put({__MODULE__, :pubsub}, pubsub)
-    else
-      Logger.warn(
-        "ChoreRunner was started without the `:pubsub` option, chore reporting via pubsub is disabled. This will prevent `ChoreRunnerUI` from functioning properly"
-      )
+    unless pubsub do
+      Logger.warn(":pubsub option not supplied to `ChoreRunner.Reporter`")
     end
 
-    {:ok, %{}}
+    send(self(), :broadcast)
+    {:ok, %{chore: chore, last_sent_chore: chore, pubsub: pubsub}}
   end
 
-  def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+  def start_link(init_opts, opts) do
+    merged_opts = Keyword.merge(init_opts, opts)
+    chore = Keyword.fetch!(merged_opts, :chore)
+    GenServer.start_link(__MODULE__, {merged_opts, chore}, name: name(chore))
   end
 
-  def register_task(task, chore_mod, ref, pids \\ [], pubsub_topics \\ []) do
-    GenServer.call(__MODULE__, {:register_task, task, ref, chore_mod, pids, pubsub_topics})
+  defp report_started,
+    do: GenServer.cast(get_reporter_pid(), {:chore_started, DateTime.utc_now()})
+
+  defp report_finished,
+    do: GenServer.cast(get_reporter_pid(), {:chore_finished, DateTime.utc_now()})
+
+  def report_failed(reason),
+    do: GenServer.cast(get_reporter_pid(), {:chore_failed, reason, DateTime.utc_now()})
+
+  def log(message),
+    do: GenServer.cast(get_reporter_pid(), {:log, message, DateTime.utc_now()})
+
+  def set_counter(name, value), do: do_update_counter(name, value, :set)
+  def inc_counter(name, amount), do: do_update_counter(name, amount, :inc)
+
+  defp do_update_counter(name, value, operation),
+    do: GenServer.cast(get_reporter_pid(), {:update_counter, name, value, operation})
+
+  def get_chore_state(%Chore{} = chore) do
+    GenServer.call(name(chore), :chore_state)
   end
 
-  def get_chore_state(ref) do
-    ms = [{{:_, :"$1", :_, :_, :_, :"$2"}, [{:==, :"$1", ref}], [:"$2"]}]
-
-    :ets.select(__MODULE__, ms)
-    |> List.first()
-  end
+  def handle_call(:chore_state, _from, %{chore: chore} = state), do: {:reply, chore, state}
 
   def handle_call(
-        {:register_task, %Task{pid: pid}, ref, chore_mod, pids, pubsub_topics},
-        _,
-        state
+        {:start_chore_task, input, _opts},
+        _from,
+        %{chore: %Chore{mod: chore_mod, task: nil} = chore} = state
       ) do
-    reported_state = %Chore{logs: [], percent: 0, scalar: 0}
-    :ets.insert(__MODULE__, {pid, ref, chore_mod, pids, pubsub_topics, reported_state})
-    {:reply, :ok, state}
-  end
+    reporter_pid = self()
 
-  def handle_cast({:update_state, pid, type, value}, state) do
-    :ets.lookup_element(__MODULE__, pid, 6)
-    |> build_new_state(type, value)
-    |> do_update_state(pid)
+    task =
+      Task.Supervisor.async_nolink(ChoreSupervisor, fn ->
+        put_reporter_pid_in_process(reporter_pid)
 
-    {:noreply, state}
-  rescue
-    ArgumentError ->
-      {:noreply, state}
-  end
+        lock_arg =
+          case chore_mod.restriction do
+            :none -> :none
+            :self -> chore_mod
+            :global -> :global
+          end
 
-  defp build_new_state(state, :log, value), do: %Chore{state | logs: [value | state.logs]}
-  defp build_new_state(state, type, value), do: Map.put(state, type, value)
-
-  defp do_update_state(new_state, pid), do: :ets.update_element(__MODULE__, pid, {6, new_state})
-
-  def report_started do
-    report_status(:chore_started)
-  end
-
-  def report_finished do
-    report_status(:chore_finished)
-  end
-
-  defp report_status(status) do
-    case :ets.lookup(__MODULE__, self()) do
-      [{_, ref, mod, pids, pubsub_topics, _state}] ->
-        do_send_reports({status, mod, ref}, pids, pubsub_topics)
-
-      [] ->
-        report_error()
-    end
-  end
-
-  def report_percent(percent) do
-    do_report(:percent, percent)
-  end
-
-  def report_scalar(scalar) do
-    do_report(:scalar, scalar)
-  end
-
-  def log(message) do
-    do_report(:log, {DateTime.utc_now(), message})
-  end
-
-  defp do_report(type, value) do
-    case :ets.lookup(__MODULE__, self()) do
-      [{pid, ref, mod, pids, pubsub_topics, _state}] ->
-        if type == :log, do: Logger.info(" [ChoreRunner] [#{mod}] #{elem(value, 1)}")
-        update_state(pid, type, value)
-        do_send_reports(build_report(type, mod, ref, value), pids, pubsub_topics)
-
-      [] ->
-        report_error()
-    end
-  end
-
-  defp update_state(pid, type, value) do
-    GenServer.cast(__MODULE__, {:update_state, pid, type, value})
-  end
-
-  defp do_send_reports(report, pids, pubsub_topics) do
-    Enum.each(pids, fn pid ->
-      send(pid, report)
-    end)
-
-    if pubsub = :persistent_term.get({__MODULE__, :pubsub}, nil) do
-      Enum.each(pubsub_topics, fn topic ->
-        Phoenix.PubSub.broadcast(pubsub, topic, report)
+        if try_lock(lock_arg) do
+          report_started()
+          chore_mod.run(input)
+          report_finished()
+        else
+          report_failed("Failed to acquire lock")
+        end
       end)
 
-      Phoenix.PubSub.broadcast(pubsub, ChoreRunnerUI.pubsub_topic(), report)
+    new_chore = %Chore{chore | task: task}
+    {:reply, new_chore, %{state | chore: new_chore}}
+  end
+
+  def handle_cast({:chore_started, timestamp}, state),
+    do: {:noreply, put_in(state.chore.started_at, timestamp)}
+
+  def handle_cast({:chore_finished, timestamp}, state),
+    do: {:noreply, put_in(state.chore.finished_at, timestamp)}
+
+  def handle_cast({:chore_failed, reason, timestamp}, state) do
+    {:noreply,
+     put_in(state.chore.finished_at, timestamp)
+     |> put_log("Failed with reason: #{reason}", timestamp)}
+  end
+
+  def handle_cast({:log, message, timestamp}, state) do
+    {:noreply, %{state | chore: put_log(state.chore, message, timestamp)}}
+  end
+
+  def handle_cast({:update_counter, name, value, operation}, state) when is_number(value),
+    do: {:noreply, update_in(state.chore.values[name], &do_update_values(&1, value, operation))}
+
+  def handle_info(:broadcast, %{pubsub: nil} = state), do: {:noreply, state}
+
+  def handle_info(:broadcast, %{chore: chore, last_sent_chore: last_sent_chore} = state) do
+    Process.send_after(self(), :broadcast, 100)
+
+    if chore == last_sent_chore do
+      {:noreply, state}
+    else
+      Phoenix.PubSub.broadcast(
+        state.pubsub,
+        ChoreRunner.chore_pubsub_topic(chore),
+        diff_chore(last_sent_chore, chore)
+      )
+
+      {:noreply, %{state | last_sent_chore: chore}}
     end
   end
 
-  defp build_report(:log, mod, ref, message) do
-    {:chore_log, mod, ref, message}
+  def handle_info({ref, result}, %{chore: %{task: %{ref: ref}}} = state),
+    do: {:noreply, put_in(state.chore.result, result)}
+
+  def handle_info({:DOWN, ref, _, _, _}, %{chore: %{task: %{ref: ref}}} = state),
+    do: {:stop, :normal, state}
+
+  defp diff_chore(prev, current) do
+    %Chore{current | logs: current.logs -- prev.logs}
   end
 
-  defp build_report(type, mod, ref, value) do
-    {:chore_progress, mod, ref, {type, value}}
+  defp do_update_values(nil, value, operation), do: do_update_values(0, value, operation)
+  defp do_update_values(original, value, :inc), do: original + value
+  defp do_update_values(_original, value, :set), do: value
+
+  defp put_log(%Chore{logs: logs} = chore, log, timestamp),
+    do: %Chore{chore | logs: [{log, timestamp} | logs]}
+
+  defp put_reporter_pid_in_process(reporter_pid), do: Process.put(@process_dict_key, reporter_pid)
+
+  defp get_reporter_pid do
+    case Process.get(@process_dict_key) do
+      nil ->
+        :"$callers"
+        |> Process.get()
+        |> Enum.find(fn pid ->
+          Process.info(pid, :dictionary)[@process_dict_key]
+        end)
+        |> case do
+          nil -> raise "Attempted to call a chore reporting function outside of a chore"
+          pid -> pid
+        end
+
+      pid ->
+        pid
+    end
   end
 
-  defp report_error do
-    raise """
-    All chore reporting functions must be called from inside a currently running chore
-    """
-  end
+  defp try_lock(:none), do: true
+  defp try_lock(lock_type), do: :global.set_lock(lock_id(lock_type), all_nodes(), 0)
+
+  defp lock_id(:global), do: {__MODULE__, self()}
+  defp lock_id(chore_mod), do: {chore_mod, self()}
+
+  defp all_nodes, do: [node() | Node.list()]
+
+  defp name(%Chore{id: id}), do: {:global, {__MODULE__, id}}
 end
