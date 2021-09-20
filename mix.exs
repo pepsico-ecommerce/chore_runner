@@ -8,7 +8,11 @@ defmodule ChoreRunner.MixProject do
       elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      elixirc_paths: elixirc_paths(Mix.env())
+      elixirc_paths: elixirc_paths(Mix.env()),
+      package: package(),
+      description: """
+      An Elixir library for writing and running code chores.
+      """
     ]
   end
 
@@ -25,6 +29,15 @@ defmodule ChoreRunner.MixProject do
     [
       {:phoenix_live_view, "~> 0.16.3"},
       {:floki, ">= 0.30.0", only: :test}
+    ]
+  end
+
+  defp package do
+    [
+      maintainers: ["Chris Freeze"],
+      licenses: [],
+      links: %{github: "https://github.com/pepsico-ecommerce/chore_runner"},
+      files: ~w(lib priv/css mix.exs README.md .formatter.exs)
     ]
   end
 end
