@@ -4,8 +4,8 @@
       <%= select f, :chore, @form_chores, selected: @form_selected_chore, class: "chore-form-select", promt: "Select a Chore" %>
       <div class="chore-form-inputs-flexbox">
         <%= for ff <- inputs_for(f, :chore_attrs) do %>
-          <%= for {key, type} <- @inputs do %>
-            <%= render(__MODULE__, "chore_inputs.html", Map.merge(assigns, %{type: type, key: key, form: ff})) %>
+          <%= for {type, key, opts} <- @inputs do %>
+            <%= render(__MODULE__, "chore_inputs.html", Map.merge(assigns, %{type: type, key: key, form: ff, opts: opts})) %>
           <% end %>
         <% end %>
       </div>
@@ -15,7 +15,7 @@
 </div>
 <ul class="running-chores">
   <%= for chore <- @running_chores do %>
-  <li class="running-chore" id="<%= inspect chore.ref %>">
+  <li class="running-chore" id="<%= chore.id %>">
     <%= live_component(ChoreItemComponent, chore: chore) %>
   </li>
   <% end %>

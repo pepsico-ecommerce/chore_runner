@@ -7,20 +7,27 @@ defmodule ChoreRunnerUI.ChoreLive do
     subscribe_to_pubsub(session)
     chores = list_chores(session)
 
+    {selected_chore_name, selected_chore} =
+      case Map.to_list(chores) do
+        [{selected_chore_name, selected_chore} | _] -> {selected_chore_name, selected_chore}
+        _ -> {nil, nil}
+      end
+
     socket =
       assign(socket,
         chores: chores,
         form_chores: Map.keys(chores),
-        running_chores: list_running_chores(),
+        running_chores: ChoreRunner.list_running_chores(),
         params: params,
         session: session,
         inputs: [],
         file_inputs: [],
-        currently_selected_chore: nil,
-        form_selected_chore: nil,
+        currently_selected_chore: selected_chore,
+        form_selected_chore: selected_chore_name,
         chore_errors: %{},
         is_chore_valid: true
       )
+      |> set_inputs(selected_chore && selected_chore.inputs())
 
     {:ok, socket}
   end
@@ -95,13 +102,7 @@ defmodule ChoreRunnerUI.ChoreLive do
     {:noreply, socket}
   end
 
-  def handle_info({:chore_started, mod, ref}, socket) do
-    chore = %{
-      mod: List.last(Module.split(mod)),
-      ref: ref,
-      state: ChoreRunner.Reporter.get_chore_state(ref)
-    }
-
+  def handle_info({:chore_started, chore}, socket) do
     {:noreply,
      assign(
        socket,
@@ -110,30 +111,21 @@ defmodule ChoreRunnerUI.ChoreLive do
      )}
   end
 
-  def handle_info({:chore_progress, _, ref, {key, val}}, socket) do
+  def handle_info({:chore_update, chore}, socket) do
     {:noreply,
      assign(
        socket,
        :running_chores,
-       update_running_chore(socket.assigns.running_chores, ref, key, val)
+       update_running_chore(socket.assigns.running_chores, chore)
      )}
   end
 
-  def handle_info({:chore_log, _, ref, log}, socket) do
+  def handle_info({:chore_finished, chore}, socket) do
     {:noreply,
      assign(
        socket,
        :running_chores,
-       update_running_chore(socket.assigns.running_chores, ref, :logs, log)
-     )}
-  end
-
-  def handle_info({:chore_finished, _, ref}, socket) do
-    {:noreply,
-     assign(
-       socket,
-       :running_chores,
-       remove_running_chore(socket.assigns.running_chores, ref)
+       remove_running_chore(socket.assigns.running_chores, chore)
      )}
   end
 
@@ -143,7 +135,7 @@ defmodule ChoreRunnerUI.ChoreLive do
   end
 
   defp subscribe_to_pubsub(%{"pubsub" => pubsub}) do
-    Phoenix.PubSub.subscribe(pubsub, ChoreRunnerUI.pubsub_topic())
+    Phoenix.PubSub.subscribe(pubsub, ChoreRunner.chore_pubsub_topic(:all))
   end
 
   defp subscribe_to_pubsub(_), do: :noop
@@ -176,36 +168,21 @@ defmodule ChoreRunnerUI.ChoreLive do
 
   defp list_chores(_), do: []
 
-  defp list_running_chores do
-    ChoreRunner.list_running_chores()
-    |> Enum.map(fn {mod, ref, state} ->
-      %{mod: List.last(Module.split(mod)), ref: ref, state: state}
-    end)
-  end
-
-  defp update_running_chore(running_chores, ref, :logs, val) do
+  defp update_running_chore(running_chores, %{id: id} = chore) do
     Enum.map(running_chores, fn
-      %{ref: ^ref, state: state} = chore ->
-        %{chore | state: Map.put(state, :logs, [val | state.logs])}
+      %{id: ^id, logs: logs} ->
+        %{chore | logs: chore.logs ++ logs}
 
       chore ->
         chore
     end)
   end
 
-  defp update_running_chore(running_chores, ref, key, val) do
-    Enum.map(running_chores, fn
-      %{ref: ^ref, state: state} = chore ->
-        %{chore | state: Map.put(state, key, val)}
-
-      chore ->
-        chore
-    end)
+  defp remove_running_chore(running_chores, %{id: id}) do
+    Enum.reject(running_chores, &(&1.id == id))
   end
 
-  defp remove_running_chore(running_chores, ref) do
-    Enum.reject(running_chores, &(&1.ref == ref))
-  end
+  defp set_inputs(socket, nil), do: socket
 
   defp set_inputs(socket, inputs) do
     socket
@@ -213,7 +190,7 @@ defmodule ChoreRunnerUI.ChoreLive do
     |> assign(inputs: inputs)
     |> assign(
       :file_inputs,
-      inputs |> Enum.filter(&(elem(&1, 1) == :file)) |> Enum.map(&elem(&1, 0))
+      inputs |> Enum.filter(&(elem(&1, 0) == :file)) |> Enum.map(&elem(&1, 1))
     )
     |> enable_file_inputs()
   end
@@ -222,8 +199,8 @@ defmodule ChoreRunnerUI.ChoreLive do
 
   defp disable_previous_file_inputs(%{assigns: %{inputs: inputs}} = socket) do
     inputs
-    |> Enum.filter(fn {_key, type} -> type == :file end)
-    |> Enum.reduce(socket, fn {key, :file}, socket ->
+    |> Enum.filter(fn {type, _key, _opts} -> type == :file end)
+    |> Enum.reduce(socket, fn {:file, key, _opts}, socket ->
       disallow_upload(socket, key)
     end)
   end
@@ -232,8 +209,8 @@ defmodule ChoreRunnerUI.ChoreLive do
 
   defp enable_file_inputs(%{assigns: %{inputs: inputs}} = socket) do
     inputs
-    |> Enum.filter(fn {_key, type} -> type == :file end)
-    |> Enum.reduce(socket, fn {key, :file}, socket ->
+    |> Enum.filter(fn {type, _key, _opts} -> type == :file end)
+    |> Enum.reduce(socket, fn {:file, key, _opts}, socket ->
       allow_upload(socket, key, accept: :any, max_entries: 1)
     end)
   end

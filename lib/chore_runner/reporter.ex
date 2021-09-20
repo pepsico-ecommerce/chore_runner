@@ -6,13 +6,16 @@ defmodule ChoreRunner.Reporter do
   @process_dict_key :chore_reporter_pid
   def init({opts, chore}) do
     pubsub = Keyword.get(opts, :pubsub)
+    finished_function = Keyword.get(opts, :result_handler, & &1)
 
     unless pubsub do
       Logger.warn(":pubsub option not supplied to `ChoreRunner.Reporter`")
     end
 
     send(self(), :broadcast)
-    {:ok, %{chore: chore, last_sent_chore: chore, pubsub: pubsub}}
+
+    {:ok,
+     %{chore: chore, last_sent_chore: chore, pubsub: pubsub, finished_function: finished_function}}
   end
 
   def start_link(init_opts, opts) do
@@ -76,16 +79,24 @@ defmodule ChoreRunner.Reporter do
     {:reply, new_chore, %{state | chore: new_chore}}
   end
 
-  def handle_cast({:chore_started, timestamp}, state),
-    do: {:noreply, put_in(state.chore.started_at, timestamp)}
+  def handle_cast({:chore_started, timestamp}, state) do
+    new_state = put_in(state.chore.started_at, timestamp)
+    broadcast(new_state.pubsub, new_state.chore, :chore_started)
+    {:noreply, new_state}
+  end
 
-  def handle_cast({:chore_finished, timestamp}, state),
-    do: {:noreply, put_in(state.chore.finished_at, timestamp)}
+  def handle_cast({:chore_finished, timestamp}, state) do
+    new_state = put_in(state.chore.finished_at, timestamp)
+    broadcast(new_state.pubsub, new_state.chore, :chore_finished)
+
+    {:noreply, new_state}
+  end
 
   def handle_cast({:chore_failed, reason, timestamp}, state) do
+    new_state = put_in(state.chore.finished_at, timestamp)
+
     {:noreply,
-     put_in(state.chore.finished_at, timestamp)
-     |> put_log("Failed with reason: #{reason}", timestamp)}
+     %{new_state | chore: put_log(new_state.chore, "Failed with reason: #{reason}", timestamp)}}
   end
 
   def handle_cast({:log, message, timestamp}, state) do
@@ -97,17 +108,17 @@ defmodule ChoreRunner.Reporter do
 
   def handle_info(:broadcast, %{pubsub: nil} = state), do: {:noreply, state}
 
+  def handle_info(:broadcast, %{chore: %{finished_at: finished_at}} = state)
+      when not is_nil(finished_at),
+      do: {:noreply, state}
+
   def handle_info(:broadcast, %{chore: chore, last_sent_chore: last_sent_chore} = state) do
-    Process.send_after(self(), :broadcast, 100)
+    Process.send_after(self(), :broadcast, 10)
 
     if chore == last_sent_chore do
       {:noreply, state}
     else
-      Phoenix.PubSub.broadcast(
-        state.pubsub,
-        ChoreRunner.chore_pubsub_topic(chore),
-        diff_chore(last_sent_chore, chore)
-      )
+      broadcast(state.pubsub, diff_chore(last_sent_chore, chore), :chore_update)
 
       {:noreply, %{state | last_sent_chore: chore}}
     end
@@ -159,4 +170,18 @@ defmodule ChoreRunner.Reporter do
   defp all_nodes, do: [node() | Node.list()]
 
   defp name(%Chore{id: id}), do: {:global, {__MODULE__, id}}
+
+  defp broadcast(pubsub, chore, key) do
+    Phoenix.PubSub.broadcast(
+      pubsub,
+      ChoreRunner.chore_pubsub_topic(:all),
+      {key, chore}
+    )
+
+    Phoenix.PubSub.broadcast(
+      pubsub,
+      ChoreRunner.chore_pubsub_topic(chore),
+      {key, chore}
+    )
+  end
 end

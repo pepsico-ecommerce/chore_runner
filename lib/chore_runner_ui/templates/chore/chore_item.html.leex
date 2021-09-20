@@ -1,14 +1,13 @@
 <div class="chore-item">
   <div class="chore-item-name"><%= @chore.mod %></div>
   <div class="chore-item-recentlog">
-    <%= first_log(@chore.state.logs) %>
+    <%= first_log(@chore.logs) %>
   </div>
   <div class="chore-item-stats">
+    <%= for {key, val} <- @chore.values do %>
     <div class="chore-item-stats-scalar">
-      <%= @chore.state.scalar %>
+      <%= key %>: <%= val %>
     </div>
-    <div class="chore-item-stats-percent">
-      (<%= @chore.state.percent %>%)
-    </div>
+    <% end %>
   </div>
 </div>

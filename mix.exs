@@ -23,7 +23,7 @@ defmodule ChoreRunner.MixProject do
 
   defp deps do
     [
-      {:phoenix_live_view, "~> 0.15.7"},
+      {:phoenix_live_view, "~> 0.16.3"},
       {:floki, ">= 0.30.0", only: :test}
     ]
   end

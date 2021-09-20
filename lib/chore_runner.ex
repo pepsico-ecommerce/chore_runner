@@ -43,7 +43,9 @@ defmodule ChoreRunner do
     end)
   end
 
-  @spec chore_pubsub_topic(Chore.t()) :: String.t()
+  @spec chore_pubsub_topic(Chore.t() | :all) :: String.t()
+  def chore_pubsub_topic(:all), do: "chore_runner:*"
+
   def chore_pubsub_topic(%Chore{id: id}) do
     "chore_runner:id-#{id}"
   end
@@ -57,9 +59,6 @@ defmodule ChoreRunner do
            do_start_reporter(chore, opts),
          {:ok, started_chore} <- do_start_chore(updated_chore, validated_input, opts) do
       {:ok, started_chore}
-    else
-      {:error, reason} ->
-        reason
     end
   end
 

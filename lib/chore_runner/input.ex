@@ -4,7 +4,7 @@ defmodule ChoreRunner.Input do
   defguard valid_type(type) when type in @valid_types
 
   for type <- @valid_types do
-    def unquote(type)(name, opts) do
+    def unquote(type)(name, opts \\ []) do
       {unquote(type), name, opts}
     end
   end

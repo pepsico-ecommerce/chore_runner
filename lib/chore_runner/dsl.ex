@@ -5,7 +5,8 @@ defmodule ChoreRunner.DSL do
 
   def using do
     quote do
-      @behaviour ChoreRunner.Chore
+      alias ChoreRunner.Chore
+      @behaviour Chore
 
       import ChoreRunner.Reporter,
         only: [
@@ -21,11 +22,20 @@ defmodule ChoreRunner.DSL do
           int: 2,
           float: 2,
           file: 2,
-          bool: 2
+          bool: 2,
+          string: 1,
+          int: 1,
+          float: 1,
+          file: 1,
+          bool: 1
         ]
 
       def restriction, do: :self
       def inputs, do: []
+
+      def validate_input(input),
+        do: Chore.validate_input(%Chore{mod: __MODULE__}, input)
+
       defoverridable inputs: 0, restriction: 0
     end
   end
