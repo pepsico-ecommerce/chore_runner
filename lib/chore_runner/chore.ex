@@ -17,9 +17,6 @@ defmodule ChoreRunner.Chore do
 
   defmacro __using__(_args), do: DSL.using()
 
-  @callback restriction :: :none | :self | :global
-  @callback run(map()) :: {:ok, any()} | {:error, any()}
-
   @type unix_timestamp :: integer()
   @type t :: %__MODULE__{
           id: String.t(),
@@ -32,6 +29,10 @@ defmodule ChoreRunner.Chore do
           finished_at: DateTime.t(),
           result: any()
         }
+
+  @callback restriction :: :none | :self | :global
+  @callback inputs :: [Input.t()]
+  @callback run(map()) :: {:ok, any()} | {:error, any()}
 
   def validate_input(%__MODULE__{mod: mod}, input) do
     expected_inputs = mod.inputs
@@ -73,7 +74,11 @@ defmodule ChoreRunner.Chore do
     |> Enum.reduce({value, []}, fn validator, {val, errors} ->
       case validator.(val) do
         {:ok, validated_value} -> {validated_value, errors}
+        :ok -> {val, errors}
+        true -> {val, errors}
         {:error, reason} -> {val, [reason | errors]}
+        false -> {val, ["invalid" | errors]}
+        nil -> {val, ["invalid" | errors]}
       end
     end)
     |> case do

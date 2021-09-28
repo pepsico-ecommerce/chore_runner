@@ -1,9 +1,20 @@
 defmodule ChoreRunner.Input do
   @valid_types ~w(string int float file bool)a
 
+  @type input_type :: :string | :int | :float | :file | :bool
+  @type reason :: atom() | String.t()
+  @type validator_function ::
+          (term() -> {:ok, term()} | :ok | true | {:error, reason} | nil | false)
+  @type input_options :: [
+          validators: [validator_function],
+          description: String.t()
+        ]
+  @type t :: {input_type, atom, input_options}
+
   defguard valid_type(type) when type in @valid_types
 
   for type <- @valid_types do
+    @spec unquote(type)(atom(), input_options) :: t
     def unquote(type)(name, opts \\ []) do
       {unquote(type), name, opts}
     end

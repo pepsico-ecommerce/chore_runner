@@ -171,6 +171,8 @@ defmodule ChoreRunner.Reporter do
 
   defp name(%Chore{id: id}), do: {:global, {__MODULE__, id}}
 
+  defp broadcast(nil, _, _), do: :noop
+
   defp broadcast(pubsub, chore, key) do
     Phoenix.PubSub.broadcast(
       pubsub,
