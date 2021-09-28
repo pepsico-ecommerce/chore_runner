@@ -1,10 +1,9 @@
 defmodule ChoreRunnerUI.ChoreView do
   use ChoreRunnerUI, :view
   alias ChoreRunnerUI.Components.ChoreItemComponent
+  @styles File.read!(Application.app_dir(:chore_runner, "priv/css/chore.css"))
 
-  @priv_styles "css/chore.css"
-
-  defp styles, do: File.read!(Path.join(:code.priv_dir(:chore_runner), @styles))
+  defp styles, do: @styles
   # defp styles, do: ""
 
   defp first_log([{ts, log} | _]) do
