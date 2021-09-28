@@ -36,10 +36,13 @@ defmodule ChoreRunner do
   def list_running_chores do
     __MODULE__
     |> :pg.get_members(Reporter)
-    |> Task.async_stream(fn pid -> GenServer.call(pid, :chore_state) end)
-    |> Enum.flat_map(fn
-      {:ok, chore} -> [chore]
-      _ -> []
+    |> Enum.map(&:gen_server.send_request(&1, :chore_state))
+    |> Enum.flat_map(fn request ->
+      case :gen_server.receive_response(request, 1000) do
+        {:reply, chore} -> [chore]
+        :timeout -> []
+        {:error, _reason} -> []
+      end
     end)
   end
 
