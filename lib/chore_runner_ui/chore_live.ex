@@ -166,7 +166,7 @@ defmodule ChoreRunnerUI.ChoreLive do
     |> Enum.into(%{})
   end
 
-  defp list_chores(_), do: []
+  defp list_chores(_), do: %{}
 
   defp update_running_chore(running_chores, %{id: id} = chore) do
     Enum.map(running_chores, fn
