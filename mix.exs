@@ -37,7 +37,7 @@ defmodule ChoreRunner.MixProject do
       maintainers: ["Chris Freeze"],
       licenses: [],
       links: %{github: "https://github.com/pepsico-ecommerce/chore_runner"},
-      files: ~w(lib priv/css mix.exs README.md .formatter.exs)
+      files: ~w(lib dist/css priv/images mix.exs README.md .formatter.exs)
     ]
   end
 end
