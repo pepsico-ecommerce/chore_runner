@@ -1,14 +1,19 @@
 defmodule ChoreRunner do
   @moduledoc """
   A framework and library for productively writing and running "code chores".
+
   A "Code Chore" can really be anything,
   but most commonly is some infrequently,
   manually run code that affects production to achieve a business goal.
+
   For example: updating a config value in a database that does not yet have a UI (perhaps due to time constraints) is a great use for a chore.
   A chore could be created that accepts the desired value and runs the update query.
+
   Usually, the alternative to this would be a direct prod-shell or prod-db connection, which is inherently insecure and dangerous.
   Many fast-moving startups or companies are ok with this access for developers, and that's fine.
+
   But many companies have regulations that they must follow, or do not want to take the risk of a developer mistake while working in these environments.
+
   In these cases, ChoreRunner allows the rapid creation, testing, and reviewing of code chores, along with a bundled UI for running them that accepts a variety of input types,
   with the goal of finding a "sweet spot" of safety and speed when solving such problems.
   ## Getting Started

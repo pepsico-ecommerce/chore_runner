@@ -32,6 +32,8 @@ defmodule ChoreRunner.Chore do
 
   @doc """
   An optional callback function for defining a chore restriction.
+
+
   The restriction can be either :none, :self, or :global
   - `:none` is no restrictions
   - `:self` prevents more than one of the same chore from running simultaneously across all connected nodes
@@ -41,6 +43,8 @@ defmodule ChoreRunner.Chore do
   @callback restriction :: :none | :self | :global
   @doc """
   An optional callback function for defining a chore's inputs.
+
+
   Expects a list of input function calls.
   The input functions provided are `string`, `int`, `float`, `file`, and `bool`.
   All input functions follow the same syntax.
@@ -52,9 +56,10 @@ defmodule ChoreRunner.Chore do
       int(:name2, [some: :option])
     ]
   end
+  ```
   The supported options are
   - `:description` — a string description of the input, for UI use
-  - :validators — a list of anonymous or captured validator functions.
+  - `:validators` — a list of anonymous or captured validator functions.
     Valiator functions should accept a single argument as a parameter, but can return a variety of things, including:
     - an `{:ok, value}`, or `{:error, reason}` tuple
     - an `:ok` or `:error` atom
@@ -68,6 +73,8 @@ defmodule ChoreRunner.Chore do
   @callback inputs :: [Input.t()]
   @doc """
   A non-optional callback used to contain the main Chore logic.
+
+
   Accepts a map of input, always atom keyed. (When calling ChoreRunner.run_chore/2, a string keyed map will be intelligently converted to an atom-keyed map automatically)
   Only keys defined in the `inputs/0` callback will be present in the input map, but defined inputs are not garaunteed to be present.
   The chore callback has access to several `Reporter` functions, used for live chore metrics and loggin.
