@@ -97,6 +97,17 @@ defmodule ChoreRunnerUI.ChoreLive do
     {:noreply, assign_errors(socket, errors)}
   end
 
+  def handle_event("stop_chore", _, %{assigns: %{running_chores: []}} = socket),
+    do: {:noreply, socket}
+
+  def handle_event("stop_chore", %{"id" => id}, %{assigns: %{running_chores: chores}} = socket) do
+    {chore, rest} = List.pop_at(chores, Enum.find_index(chores, &(&1.id == id)))
+
+    ChoreRunner.stop_chore(chore)
+
+    {:noreply, assign(socket, :running_chores, rest)}
+  end
+
   def handle_event(event, _attrs, socket) do
     Logger.debug("Unhandled event #{inspect(event)} in ChoreRunnerUI.ChoreLive")
     {:noreply, socket}
@@ -152,11 +163,7 @@ defmodule ChoreRunnerUI.ChoreLive do
       |> Enum.reverse()
       |> case do
         [trimmed_module | ^split_root] ->
-          if(function_exported?(module, :inputs, 0)) do
-            {trimmed_module, module}
-          else
-            nil
-          end
+          {trimmed_module, module}
 
         _ ->
           nil

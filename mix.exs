@@ -35,9 +35,9 @@ defmodule ChoreRunner.MixProject do
   defp package do
     [
       maintainers: ["Chris Freeze"],
-      licenses: [],
+      licenses: ["Apache 2.0"],
       links: %{github: "https://github.com/pepsico-ecommerce/chore_runner"},
-      files: ~w(lib dist/css priv/images mix.exs README.md .formatter.exs)
+      files: ~w(lib priv/css mix.exs README.md .formatter.exs)
     ]
   end
 end

@@ -65,6 +65,10 @@ defmodule ChoreRunner do
     end
   end
 
+  def stop_chore(%Chore{reporter: pid} = chore) do
+    GenServer.call(pid, :stop_chore)
+  end
+
   defp gen_id do
     16
     |> :crypto.strong_rand_bytes()

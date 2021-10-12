@@ -15,7 +15,12 @@ defmodule ChoreRunner.Reporter do
     send(self(), :broadcast)
 
     {:ok,
-     %{chore: chore, last_sent_chore: chore, pubsub: pubsub, finished_function: finished_function}}
+     %{
+       chore: Map.put(chore, :reporter, self()),
+       last_sent_chore: chore,
+       pubsub: pubsub,
+       finished_function: finished_function
+     }}
   end
 
   def start_link(init_opts, opts) do
@@ -79,6 +84,26 @@ defmodule ChoreRunner.Reporter do
     {:reply, new_chore, %{state | chore: new_chore}}
   end
 
+  def handle_call(:stop_chore, _from, state) do
+    ChoreSupervisor
+    |> Task.Supervisor.terminate_child(state.chore.task.pid)
+    |> case do
+      :ok ->
+        new_state = %{state | chore: put_log(state.chore, "Chore Stopped", DateTime.utc_now())}
+        state.finished_function.(new_state.chore)
+
+        Task.async(fn ->
+          Process.sleep(10)
+          DynamicSupervisor.terminate_child(ChoreRunner.ReporterSupervisor, self())
+        end)
+
+        {:reply, :ok, new_state}
+
+      _ ->
+        {:reply, :error, state}
+    end
+  end
+
   def handle_cast({:chore_started, timestamp}, state) do
     new_state = put_in(state.chore.started_at, timestamp)
     broadcast(new_state.pubsub, new_state.chore, :chore_started)
@@ -88,6 +113,7 @@ defmodule ChoreRunner.Reporter do
   def handle_cast({:chore_finished, timestamp}, state) do
     new_state = put_in(state.chore.finished_at, timestamp)
     broadcast(new_state.pubsub, new_state.chore, :chore_finished)
+    state.finished_function.(state.chore)
 
     {:noreply, new_state}
   end
