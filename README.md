@@ -117,7 +117,7 @@ The restriction callback configures each chore's concurrency restriction. Concur
 
   Only one :global chore can run at a time, even between different chores. This does not prevent other non-global chores from running.
 
-## run/1
+### `run/1`
 The meat of your chore will reside in the `run/1` callback. When you run a chore through the UI, that calls `ChoreRunner.run_chore/2`, which eventually calls out to your `run/1` callback. It accepts an atom-keyed map of expected input, defined by the `input` callback. Input presence in the map is not garaunteed, but you are garaunteed to only receive input specified in the callback. Any return value is is stored in the chore struct via the reporter, broadcasted on the pubsub, and also directly passed to the configured chore resolution handler on chore completion.
 
 ## Chore Reporting
