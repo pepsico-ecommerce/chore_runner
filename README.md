@@ -1,7 +1,7 @@
 # ChoreRunner
 An Elixir library for writing and running code chores.
 ### What is a chore?
-A chore is just code that is intended to be manually and infrequently run by a developer for a business or application need.
+A chore is just code that is intended to be manually and often infrequently run by a developer for a business or application need.
 
 ### Why not just use a remote shell
 - Remote shells skip testing and review processes that could detect issues with the code being executed. Tested and reviewed code is safer than untested and unreviewed code.
