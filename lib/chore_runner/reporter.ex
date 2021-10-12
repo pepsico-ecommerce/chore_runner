@@ -89,7 +89,10 @@ defmodule ChoreRunner.Reporter do
     |> Task.Supervisor.terminate_child(state.chore.task.pid)
     |> case do
       :ok ->
-        new_state = %{state | chore: put_log(state.chore, "Chore Stopped", DateTime.utc_now())}
+        new_state =
+          %{state | chore: put_log(state.chore, "Stopping Chore", DateTime.utc_now())}
+          |> fail_chore("Stopped", DateTime.utc_now())
+
         state.finished_function.(new_state.chore)
 
         Task.async(fn ->
@@ -119,10 +122,8 @@ defmodule ChoreRunner.Reporter do
   end
 
   def handle_cast({:chore_failed, reason, timestamp}, state) do
-    new_state = put_in(state.chore.finished_at, timestamp)
-
-    {:noreply,
-     %{new_state | chore: put_log(new_state.chore, "Failed with reason: #{reason}", timestamp)}}
+    new_state = fail_chore(state, reason, timestamp)
+    {:noreply, new_state}
   end
 
   def handle_cast({:log, message, timestamp}, state) do
@@ -131,6 +132,18 @@ defmodule ChoreRunner.Reporter do
 
   def handle_cast({:update_counter, name, value, operation}, state) when is_number(value),
     do: {:noreply, update_in(state.chore.values[name], &do_update_values(&1, value, operation))}
+
+  defp fail_chore(state, reason, timestamp) do
+    new_state = put_in(state.chore.finished_at, timestamp)
+
+    new_state = %{
+      new_state
+      | chore: put_log(new_state.chore, "Failed with reason: #{reason}", timestamp)
+    }
+
+    broadcast(new_state.pubsub, new_state.chore, :chore_failed)
+    new_state
+  end
 
   def handle_info(:broadcast, %{pubsub: nil} = state), do: {:noreply, state}
 

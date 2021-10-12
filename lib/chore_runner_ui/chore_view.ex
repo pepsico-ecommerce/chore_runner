@@ -5,7 +5,7 @@ defmodule ChoreRunnerUI.ChoreView do
 
   defp styles, do: @styles
 
-  defp first_log([{ts, log} | _]) do
+  defp first_log([{log, ts} | _]) do
     "[#{ts}] #{log}"
   end
 

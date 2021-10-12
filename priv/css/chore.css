@@ -24,8 +24,6 @@ button:focus {
 .chore-container {
   width: 100%;
   height: 100%;
-  padding-left: 2em;
-  padding-right: 2em;
 }
 
 .running-chores {

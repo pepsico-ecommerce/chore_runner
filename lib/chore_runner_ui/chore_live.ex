@@ -101,11 +101,11 @@ defmodule ChoreRunnerUI.ChoreLive do
     do: {:noreply, socket}
 
   def handle_event("stop_chore", %{"id" => id}, %{assigns: %{running_chores: chores}} = socket) do
-    {chore, rest} = List.pop_at(chores, Enum.find_index(chores, &(&1.id == id)))
+    chores
+    |> Enum.find(&(&1.id == id))
+    |> ChoreRunner.stop_chore()
 
-    ChoreRunner.stop_chore(chore)
-
-    {:noreply, assign(socket, :running_chores, rest)}
+    {:noreply, socket}
   end
 
   def handle_event(event, _attrs, socket) do
@@ -131,7 +131,8 @@ defmodule ChoreRunnerUI.ChoreLive do
      )}
   end
 
-  def handle_info({:chore_finished, chore}, socket) do
+  def handle_info({final_message, chore}, socket)
+      when final_message in [:chore_finished, :chore_failed] do
     {:noreply,
      assign(
        socket,
@@ -178,7 +179,7 @@ defmodule ChoreRunnerUI.ChoreLive do
   defp update_running_chore(running_chores, %{id: id} = chore) do
     Enum.map(running_chores, fn
       %{id: ^id, logs: logs} ->
-        %{chore | logs: chore.logs ++ logs}
+        %{chore | logs: chore.logs ++ logs, task: chore.task}
 
       chore ->
         chore
