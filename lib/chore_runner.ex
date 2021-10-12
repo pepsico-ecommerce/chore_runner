@@ -1,10 +1,8 @@
 defmodule ChoreRunner do
   @moduledoc """
-  A framework and library for productively writing and running "code chores".
+  A framework and library for productively writing and running code "Chores".
 
-  A "Code Chore" can really be anything,
-  but most commonly is some infrequently,
-  manually run code that affects production to achieve a business goal.
+  A "Chore" can really be anything, but most commonly it is just some infrequently, manually run code which achieve a business or development goal.
 
   For example: updating a config value in a database that does not yet have a UI (perhaps due to time constraints) is a great use for a chore.
   A chore could be created that accepts the desired value and runs the update query.
