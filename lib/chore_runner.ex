@@ -111,7 +111,7 @@ defmodule ChoreRunner do
   Returns `:ok` if successful, and `:error` if not successful
   """
   @spec stop_chore(Chore.t()) :: :ok | :error
-  def stop_chore(%Chore{reporter: pid} = chore) do
+  def stop_chore(%Chore{reporter: pid}) do
     GenServer.call(pid, :stop_chore)
   end
 
