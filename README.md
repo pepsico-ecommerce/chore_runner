@@ -27,7 +27,7 @@ with the goal of finding a "sweet spot" of safety and speed when solving such pr
 ## Installation
 Add `chore_runner` to your deps.
 ```elixir
-{:chore_runner, "~> 0.1.1"}
+{:chore_runner, "~> 0.1.2"}
 ```
 Add `ChoreRunner` to your supervision tree, after your app's `PubSub`:
 ```elixir

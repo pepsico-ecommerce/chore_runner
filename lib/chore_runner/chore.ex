@@ -132,6 +132,7 @@ defmodule ChoreRunner.Chore do
         {:error, reason} -> {val, [reason | errors]}
         false -> {val, ["invalid" | errors]}
         nil -> {val, ["invalid" | errors]}
+        other -> {other, errors}
       end
     end)
     |> case do
