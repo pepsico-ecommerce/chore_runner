@@ -1,4 +1,4 @@
-defmodule ChoreRunner.Example do
+defmodule ApiV1.Chores.Example do
   use ChoreRunner.Chore
   alias ChoreRunner.Reporter
 

@@ -1,0 +1,25 @@
+{
+  "name": "assets",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "webpack": "webpack",
+    "delete-mainjs": "rm -rf ../dist/priv/dist/main.js",
+    "watch-scss": "nodemon --watch ./ --ext scss --ignore dist --exec \"npm run webpack && rm -rf ../priv/css/main.js\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "css-loader": "^6.3.0",
+    "mini-css-extract-plugin": "^2.4.1",
+    "nodemon": "^2.0.13",
+    "optimize-css-assets-webpack-plugin": "^6.0.1",
+    "sass": "^1.42.1",
+    "sass-loader": "^12.1.0",
+    "style-loader": "^3.3.0",
+    "webpack": "^5.57.1",
+    "webpack-cli": "^4.8.0"
+  }
+}

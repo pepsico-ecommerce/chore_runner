@@ -1,0 +1,17 @@
+@import url("https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700,800,900&display=swap");
+@import "button";
+@import "container";
+@import "typography";
+@import "form";
+@import "chore-item";
+
+.running-chores {
+  list-style-type: none;
+  background-color: white;
+  padding: 0.25em;
+  padding-top: 0.5em;
+  height: 40em;
+  overflow-y: scroll;
+  margin-top: 0;
+  height: 100%;
+}
