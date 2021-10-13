@@ -5,6 +5,7 @@ An Elixir library for writing and running code chores.
 - [Installation](#installation)
 - [Writing a Chore](#writing-a-chore)
 - [Chore Reporting](#chore-reporting)
+- [Contribution](#contribution)
 ## Motivation
 ### What is a "Chore"?
 A "Chore" can really be anything, but most commonly it is just some infrequently, manually run code which achieve a business or development goal.
@@ -26,7 +27,7 @@ with the goal of finding a "sweet spot" of safety and speed when solving such pr
 ## Installation
 Add `chore_runner` to your deps.
 ```elixir
-{:chore_runner, "~> 0.1.0"}
+{:chore_runner, "~> 0.1.1"}
 ```
 Add `ChoreRunner` to your supervision tree, after your app's `PubSub`:
 ```elixir
@@ -149,3 +150,7 @@ The meat of your chore will reside in the `run/1` callback. When you run a chore
   Increments the specified counter by the provided value. If the value does not exist, the value defaults to 0, then is incremented.
 
 These functions work in both the main chore process, and certain spawned processes such as via `Task.async_stream` for parellelization. Attempting to call these functions outside of those conditions will result in an exception.
+
+## Contribution
+
+Unfortunately, we cannot accept pull requests at this time. However, we will adress any and all issues opened related to bugs or ideas/features.
