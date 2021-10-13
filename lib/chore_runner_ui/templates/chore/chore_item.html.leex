@@ -1,5 +1,10 @@
 <div class="chore-item">
-  <div class="chore-item-name"><%= @chore.mod %></div>
+  <div class="chore-item-name">
+    <%= @chore.mod %>
+    <button class="chore-item-stop-button" phx-click="stop_chore" phx-value-id="<%=@chore.id%>">
+      Stop
+    </button>
+  </div>
   <div class="chore-item-recentlog">
     <%= first_log(@chore.logs) %>
   </div>

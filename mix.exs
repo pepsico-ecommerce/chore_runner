@@ -28,16 +28,17 @@ defmodule ChoreRunner.MixProject do
   defp deps do
     [
       {:phoenix_live_view, "~> 0.16.3"},
-      {:floki, ">= 0.30.0", only: :test}
+      {:floki, ">= 0.30.0", only: :test},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end
 
   defp package do
     [
       maintainers: ["Chris Freeze"],
-      licenses: [],
+      licenses: ["Apache 2.0"],
       links: %{github: "https://github.com/pepsico-ecommerce/chore_runner"},
-      files: ~w(lib dist/css priv/images mix.exs README.md .formatter.exs)
+      files: ~w(lib priv/css mix.exs README.md .formatter.exs)
     ]
   end
 end

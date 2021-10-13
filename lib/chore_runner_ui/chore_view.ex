@@ -6,7 +6,7 @@ defmodule ChoreRunnerUI.ChoreView do
   # defp styles, do: @styles
   defp styles, do: File.read!(Application.app_dir(:chore_runner, "priv/css/main.css"))
 
-  defp first_log([{ts, log} | _]) do
+  defp first_log([{log, ts} | _]) do
     "[#{ts}] #{log}"
   end
 

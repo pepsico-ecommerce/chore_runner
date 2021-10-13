@@ -24,8 +24,6 @@ button:focus {
 .chore-container {
   width: 100%;
   height: 100%;
-  padding-left: 2em;
-  padding-right: 2em;
 }
 
 .running-chores {
@@ -139,7 +137,6 @@ button:focus {
 
 .chore-item {
   margin-bottom: 0.1em;
-  width: 100%;
   min-height: 5em;
   border-radius: 1em;
   background-color: white;
@@ -169,7 +166,7 @@ button:focus {
 }
 
 .chore-item-stats {
-  width: 5em;
+  width: 3em;
   display: flex;
   flex-wrap: nowrap;
   flex-direction: row;
@@ -182,4 +179,10 @@ button:focus {
   display: flex;
   flex-direction: row;
   align-items: center;
+}
+
+.chore-item-stop-button {
+  border: 1px solid black;
+  border-radius: 1em;
+  padding: 0.5em;
 }
