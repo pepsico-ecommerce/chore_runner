@@ -1,21 +1,27 @@
 # ChoreRunner
 An Elixir library for writing and running code chores.
+
+- [Motivation](#motivation)
+- [Installation](#installation)
+- [Writing a Chore](#writing-a-chore)
+- [Chore Reporting](#chore-reporting)
+## Motivation
 ### What is a "Chore"?
 A "Chore" can really be anything, but most commonly it is just some infrequently, manually run code which achieve a business or development goal.
 
 For example: updating a config value in a database that does not yet have a UI (perhaps due to time constraints) is a great use for a chore. A chore could be created that accepts the desired value and runs the update query.
 
-### What problem does this solve?
-The alternative to a chore would be a direct prod-shell or prod-db connection, which is inherently insecure and dangerous.
+### What problem does ChoreRunner solve?
+The primary fast alternative to extensive development for some infrequent business need tends to be a direct prod-shell or prod-db connection, which is inherently insecure and dangerous.
 Many fast-moving startups or companies are ok with this access for developers, and that's fine. But many companies have regulations that they must follow, or do not want to take the risk of a developer mistake while working in these environments.
 
-In these cases, ChoreRunner allows the rapid creation, testing, and reviewing of code chores, along with a bundled UI for running them that accepts a variety of input types,
+ChoreRunner allows the rapid creation, testing, and reviewing of code chores, along with a bundled UI for running them that accepts a variety of input types,
 with the goal of finding a "sweet spot" of safety and speed when solving such problems.
 
 ### Shells vs Chores
 - Remote shells skip testing and review processes that could detect issues with the code being executed. Chores are easily tested and reviewed, and tested/reviewed code is safer than untested and unreviewed code.
-- Remote-shell access is a common security audit issue. To comply with security requirements such as PCI-DSS, they might need to be restricted. Chores are a normal part of your app, with controlled behavior like any other admin page, and will not flag most security audits (depending on how you use them)
-- Two developers could unwittingly step on each other's toes if using remote shells in the same app simultaneously. Chores have built-in protections for this
+- Remote-shell access is a common security audit issue. To comply with security requirements such as PCI-DSS, they might need to be restricted. Chores are a normal part of your app, with controlled behavior like any other admin page, and will not flag most security audits (depending on how you use them).
+- Two developers could unwittingly step on each other's toes if using remote shells in the same app simultaneously. Chores have built-in protections for this.
 - A common reason for using shells is the lack of developer bandwidth to create specific admin functionality for an uncommon task. ChoreRunner ships with a LiveView UI that generates input forms automatically, and lets you track chore progress.
 ## Installation
 Add `chore_runner` to your deps.
