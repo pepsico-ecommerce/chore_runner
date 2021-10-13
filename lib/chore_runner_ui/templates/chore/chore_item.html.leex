@@ -1,9 +1,15 @@
 <div class="chore-item">
   <div class="chore-item-name">
     <span><%= @chore.mod %></span>
+    <%= if @chore.finished_at do %>
+    <button class="chore-item-stop-button" phx-click="dismiss_chore" phx-value-id="<%=@chore.id%>">
+      Dismiss
+    </button>
+    <% else %>
     <button class="chore-item-stop-button" phx-click="stop_chore" phx-value-id="<%=@chore.id%>">
       Stop
     </button>
+    <% end %>
   </div>
   <div class="chore-item-content-container">
     <div class="chore-item-recentlog">

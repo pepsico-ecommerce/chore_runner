@@ -149,6 +149,10 @@ defmodule ChoreRunnerUI.ChoreLive do
     {:noreply, socket}
   end
 
+  def handle_event("dismiss_chore", %{"id" => id}, socket) do
+    {:noreply, remove_running_chore(socket, id)}
+  end
+
   def handle_event(event, _attrs, socket) do
     Logger.debug("Unhandled event #{inspect(event)} in ChoreRunnerUI.ChoreLive")
     {:noreply, socket}
@@ -178,7 +182,7 @@ defmodule ChoreRunnerUI.ChoreLive do
      assign(
        socket,
        :running_chores,
-       remove_running_chore(socket.assigns.running_chores, chore)
+       update_running_chore(socket.assigns.running_chores, chore)
      )}
   end
 
@@ -219,7 +223,7 @@ defmodule ChoreRunnerUI.ChoreLive do
 
   defp update_running_chore(running_chores, %{id: id} = chore) do
     Enum.map(running_chores, fn
-      %{id: ^id, logs: logs} ->
+      %{id: ^id, logs: logs, finished_at: nil} ->
         %{chore | logs: chore.logs ++ logs, task: chore.task}
 
       chore ->
@@ -227,8 +231,8 @@ defmodule ChoreRunnerUI.ChoreLive do
     end)
   end
 
-  defp remove_running_chore(running_chores, %{id: id}) do
-    Enum.reject(running_chores, &(&1.id == id))
+  defp remove_running_chore(%{assigns: %{running_chores: running_chores}} = socket, id) do
+    assign(socket, :running_chores, Enum.reject(running_chores, &(&1.id == id)))
   end
 
   defp set_inputs(socket, nil), do: socket
