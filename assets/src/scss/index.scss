@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700,800,900&display=swap");
 @import "button";
 @import "container";
 @import "typography";
@@ -13,45 +14,4 @@
   overflow-y: scroll;
   margin-top: 0;
   height: 100%;
-}
-
-.chore-form-flexbox {
-  display: flex;
-  flex-direction: column;
-}
-
-.chore-form-inputs-flexbox {
-  text-align: left;
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: space-between;
-}
-
-.chore-form-file-input-wrapper {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: stretch;
-}
-
-.chore-form-top-level-input-wrapper {
-  width: 32%;
-  min-height: 3em;
-}
-
-.chore-form-input-errors-wrapper {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-.chore-form-file-input {
-  color: white;
-}
-
-.chore-run-submit-button {
-  margin-top: 24px;
-  width: 100%;
 }

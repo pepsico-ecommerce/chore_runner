@@ -15,9 +15,20 @@
 .chore-item-name {
   background-color: #d9d9d9;
   padding: 16px 24px;
-  text-transform: uppercase;
-  font-weight: 400;
-  color: #262626;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  & > span {
+    text-transform: uppercase;
+    font-family: Source Sans Pro;
+    font-weight: 400;
+    color: #262626;
+  }
+}
+
+.chore-item-content-container {
+  display: flex;
 }
 
 .chore-item-recentlog {
@@ -28,17 +39,30 @@
 }
 
 .chore-item-stats {
-  width: 5em;
+  width: 50%;
   display: flex;
-  flex-wrap: nowrap;
-  flex-direction: row;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: 10px 24px;
 }
 
-.chore-item-stats > div {
-  width: 2em;
-  text-align: center;
+.chore-item-stats-scalar {
+  padding: 5px;
+  margin: 5px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  flex: 0 0 45%;
+  min-height: 30px;
   display: flex;
-  flex-direction: row;
-  align-items: center;
+  flex-direction: column;
+
+  & span:first-child {
+    font-family: Source Sans Pro;
+    font-size: 12px;
+    color: #828282;
+  }
+
+  & span:nth-child(2) {
+    font-family: Source Sans Pro;
+    font-size: 28px;
+  }
 }
