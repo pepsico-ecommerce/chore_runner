@@ -1,7 +1,9 @@
+@import "variables";
+
 .chore-item {
   margin: 5px 20px;
   margin-bottom: 0.1em;
-  border: 1px solid #d9d9d9;
+  border: 1px solid $border-color;
   border-radius: 4px;
   background-color: white;
   display: flex;
@@ -13,7 +15,7 @@
 }
 
 .chore-item-name {
-  background-color: #d9d9d9;
+  background-color: $pepdirect-gray6;
   padding: 16px 24px;
   display: flex;
   justify-content: space-between;
@@ -21,9 +23,9 @@
 
   & span {
     text-transform: uppercase;
-    font-family: Source Sans Pro;
+    font-family: $font-primary;
     font-weight: 400;
-    color: #262626;
+    color: $pepdirect-gray1;
   }
 }
 
@@ -34,7 +36,7 @@
 .chore-item-recentlog {
   font-family: Courier New, monospace;
   padding: 20px 24px;
-  color: #595959;
+  color: $pepdirect-gray2;
   width: 50%;
 }
 
@@ -48,7 +50,7 @@
 .chore-item-stats-scalar {
   padding: 5px;
   margin: 5px;
-  border: 1px solid #d9d9d9;
+  border: 1px solid $border-color;
   border-radius: 4px;
   flex: 0 0 45%;
   min-height: 30px;
@@ -56,13 +58,13 @@
   flex-direction: column;
 
   & span:first-child {
-    font-family: Source Sans Pro;
+    font-family: $font-primary;
     font-size: 12px;
-    color: #828282;
+    color: $pepdirect-gray3;
   }
 
   & span:nth-child(2) {
-    font-family: Source Sans Pro;
+    font-family: $font-primary;
     font-size: 28px;
   }
 }

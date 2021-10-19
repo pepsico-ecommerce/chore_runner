@@ -1,3 +1,5 @@
+@import "variables";
+
 .chore-container {
   width: 100%;
   height: 100vh;
@@ -8,7 +10,7 @@
 }
 
 .chore-menu {
-  background-color: #f0f0f0;
+  background-color: $pepdirect-gray6;
   padding: 10px 20px;
   min-width: 250px;
 }

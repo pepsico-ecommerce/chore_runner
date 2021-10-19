@@ -1,0 +1,49 @@
+@import "./colors";
+
+$margin-base: 10px;
+$padding-base: 10px;
+
+$font-primary: "Source Sans Pro", "Helvetica Neue", "Helvetica", "Arial",
+  sans-serif; // DM Sans
+
+$z-index-modal: 10001;
+$z-index-header: $z-index-modal - 1;
+
+// BREAKPOINT WIDTHS
+// simplified version of https://gist.github.com/gokulkrishh/242e68d1ee94ad05f488
+$mobile-min: 320px;
+$mobile-max: 767px;
+$tablet-min: 768px;
+$tablet-max: 1024px;
+$laptop-min: 1025px;
+
+// BREAKPOINTS
+@mixin mobile {
+  @media (min-width: #{$mobile-min}) and (max-width: #{$mobile-max}) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (min-width: #{$tablet-min}) and (max-width: #{$tablet-max}) {
+    @content;
+  }
+}
+
+@mixin laptop {
+  @media (min-width: #{$laptop-min}) {
+    @content;
+  }
+}
+
+@mixin not-laptop {
+  @media (max-width: #{$laptop-min}) {
+    @content;
+  }
+}
+
+@mixin not-mobile {
+  @media (min-width: #{$tablet-min}) {
+    @content;
+  }
+}
