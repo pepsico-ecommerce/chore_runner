@@ -1,4 +1,4 @@
-<div class="chore-item">
+<div class="chore-item" phx-click="select_chore" phx-value-chore="<%=@chore.id%>">
   <div class="chore-item-name">
     <span><%= @chore.mod %></span>
     <%= if @chore.finished_at do %>

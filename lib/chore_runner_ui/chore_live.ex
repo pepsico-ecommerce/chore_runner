@@ -66,7 +66,8 @@ defmodule ChoreRunnerUI.ChoreLive do
         currently_selected_chore: selected_chore,
         form_selected_chore: selected_chore_name,
         chore_errors: %{},
-        is_chore_valid: true
+        is_chore_valid: true,
+        selected_chore: nil
       )
       |> set_inputs(selected_chore && selected_chore.inputs())
 
@@ -153,6 +154,15 @@ defmodule ChoreRunnerUI.ChoreLive do
     {:noreply, remove_running_chore(socket, id)}
   end
 
+  def handle_event("select_chore", %{"chore" => id}, socket) do
+    selected_chore = Enum.find(socket.assigns.running_chores, &(&1.id == id))
+    {:noreply, assign(socket, :selected_chore, selected_chore)}
+  end
+
+  def handle_event("deselect_chore", _, socket) do
+    {:noreply, assign(socket, :selected_chore, nil)}
+  end
+
   def handle_event(event, _attrs, socket) do
     Logger.debug("Unhandled event #{inspect(event)} in ChoreRunnerUI.ChoreLive")
     {:noreply, socket}
@@ -168,6 +178,20 @@ defmodule ChoreRunnerUI.ChoreLive do
   end
 
   def handle_info({:chore_update, chore}, socket) do
+    socket =
+      if socket.assigns.selected_chore && socket.assigns.selected_chore.id == chore.id do
+        assign(
+          socket,
+          :selected_chore,
+          %{
+            socket.assigns.selected_chore
+            | logs: chore.logs ++ socket.assigns.selected_chore.logs
+          }
+        )
+      else
+        socket
+      end
+
     {:noreply,
      assign(
        socket,
