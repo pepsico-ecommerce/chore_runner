@@ -1,9 +1,18 @@
 <%= if @chore do %>
-<div style="position: absolute; top: 0; left: 0; z-index: 100; background-color: black; opacity: .3; display: flex; justify-content: center; align-items: center; height: 100%; width: 100%;" phx-click="deselect_chore">
+<div class="chore-modal-backdrop" phx-click="deselect_chore">
 </div>
-<div id="<%=@chore.id%>-modal" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 101; padding: 10px; background-color: white; min-height: 200px; min-width: 300px; max-height: 300px; overflow-y: scroll;">
-  <%= for {message, timestamp} <- @chore.logs do %>
-    <p id="<%= "#{@chore.id}-#{timestamp}" %>"><%= message %></p>
-  <% end %>
+<div class="chore-modal-container" id="<%=@chore.id%>-modal">
+  <div class="chore-modal-header">
+    <h2><%= @chore.__struct__%></h2>
+    <button phx-click="deselect_chore"> X</button>
+  </div>
+  <div class="chore-modal-text-container">
+    <%= for {message, timestamp} <- @chore.logs do %>
+      <p id="<%= "#{@chore.id}-#{timestamp}" %>"><%= timestamp %> <%= message %></p>
+    <% end %>
+  </div>
+  <div class="chore-modal-bottom-container">
+    <button phx-click="deselect_chore">Close</button>
+  </div>
 </div>
 <% end %>

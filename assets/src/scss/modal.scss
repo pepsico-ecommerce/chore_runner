@@ -1,0 +1,70 @@
+.chore-modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  background-color: black;
+  opacity: 0.3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+}
+
+.chore-modal-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 101;
+  background-color: $pepdirect-gray7;
+  box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.15);
+  min-height: 200px;
+  min-width: 50%;
+  max-height: 400px;
+  overflow-y: scroll;
+}
+
+.chore-modal-header {
+  padding: 10px;
+  background-color: $pepdirect-gray7;
+  border-bottom: 1px solid #d9d9d9;
+  display: flex;
+  justify-content: space-between;
+
+  & h2 {
+    font-weight: 500;
+    font-family: $font-primary !important;
+    color: $pepdirect-gray1;
+    font-size: 16px;
+  }
+
+  & button {
+    border: none;
+    background-color: transparent;
+    color: black;
+    padding: 0;
+    color: $pepdirect-gray1;
+    font-family: $font-primary;
+  }
+}
+
+.chore-modal-text-container {
+  min-height: 200px;
+  min-width: 300px;
+  max-height: 300px;
+  padding: 10px;
+
+  & p {
+    font-family: Courier New, monospace;
+  }
+}
+
+.chore-modal-bottom-container {
+  padding: 10px;
+  display: flex;
+  justify-content: flex-end;
+  background-color: $pepdirect-gray6;
+  border-top: 1px solid #d9d9d9;
+}
