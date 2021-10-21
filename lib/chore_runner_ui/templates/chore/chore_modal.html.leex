@@ -3,12 +3,12 @@
 </div>
 <div class="chore-modal-container" id="<%=@chore.id%>-modal">
   <div class="chore-modal-header">
-    <h2>Lorem Ipsum Chore for 00/00/00 - 00/00/00</h2>
+    <h2><%= @chore.__struct__%></h2>
     <button phx-click="deselect_chore"> X</button>
   </div>
   <div class="chore-modal-text-container">
     <%= for {message, timestamp} <- @chore.logs do %>
-      <p id="<%= "#{@chore.id}-#{timestamp}" %>"><%= message %></p>
+      <p id="<%= "#{@chore.id}-#{timestamp}" %>"><%= timestamp %> <%= message %></p>
     <% end %>
   </div>
   <div class="chore-modal-bottom-container">
