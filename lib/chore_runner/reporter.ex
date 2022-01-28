@@ -4,6 +4,8 @@ defmodule ChoreRunner.Reporter do
   alias ChoreRunner.{Chore, ChoreSupervisor}
 
   @process_dict_key :chore_reporter_pid
+  def __process_dict_key__, do: @process_dict_key
+
   def init({opts, chore}) do
     pubsub = Keyword.get(opts, :pubsub)
     finished_function = Keyword.get(opts, :result_handler, & &1)
