@@ -74,13 +74,13 @@ end
 
 Besides `run/1`, there are two other callbacks that you can implement
 
-### `input/0`
+### `inputs/0`
 
 ```elixir
 defmodule MyApp.Chores.BasicChore do
   use ChoreRunner.Chore
 
-  def input do
+  def inputs do
     [
       string(:my_string),
       int(:my_int),
@@ -96,18 +96,20 @@ defmodule MyApp.Chores.BasicChore do
 end
 ```
 
-The input callback lets you define expected inputs to the chore using input functions imported from ChoreRunner.Input. Input not defined in the callback will be discarded when passed to a chore through `ChoreRunner.run_chore/2`. The 5 supported input types are:
+The inputs callback lets you define expected inputs to the chore using input functions imported from ChoreRunner.Input. Input not defined in the callback will be discarded when passed to a chore through `ChoreRunner.run_chore/2`. The 6 supported input types are:
 - string
 - int
 - float
 - bool
 - file
+- select
 
 Input functions also accept an optional keyword list of options as a second argument. The supported keys are:
 - :description — a description of an input
 - :validators — a list of functions, either captured or anonymous, that can be used to transform and validate any provided input.
+- :options - The Keyword list provided for the select element.
   ```elixir
-  def input do
+  def inputs do
     [
       string(:name, validators: [&check_length/1, & {:ok, String.capitalize(&1)}]),
     ]
@@ -135,7 +137,7 @@ The restriction callback configures each chore's concurrency restriction. Concur
   Only one :global chore can run at a time, even between different chores. This does not prevent other non-global chores from running.
 
 ### `run/1`
-The meat of your chore will reside in the `run/1` callback. When you run a chore through the UI, that calls `ChoreRunner.run_chore/2`, which eventually calls out to your `run/1` callback. It accepts an atom-keyed map of expected input, defined by the `input` callback. Input presence in the map is not garaunteed, but you are garaunteed to only receive input specified in the callback. Any return value is is stored in the chore struct via the reporter, broadcasted on the pubsub, and also directly passed to the configured chore resolution handler on chore completion.
+The meat of your chore will reside in the `run/1` callback. When you run a chore through the UI, that calls `ChoreRunner.run_chore/2`, which eventually calls out to your `run/1` callback. It accepts an atom-keyed map of expected input, defined by the `inputs` callback. Input presence in the map is not garaunteed, but you are garaunteed to only receive input specified in the callback. Any return value is is stored in the chore struct via the reporter, broadcasted on the pubsub, and also directly passed to the configured chore resolution handler on chore completion.
 
 ## Chore Reporting
 `use ChoreRunner.Chore` imports the following functions for use in the `run/1` callback:

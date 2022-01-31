@@ -1,13 +1,14 @@
 defmodule ChoreRunner.Input do
-  @valid_types ~w(string int float file bool)a
+  @valid_types ~w(string int float file bool select)a
 
-  @type input_type :: :string | :int | :float | :file | :bool
+  @type input_type :: :string | :int | :float | :file | :bool | :select
   @type reason :: atom() | String.t()
   @type validator_function ::
           (term() -> {:ok, term()} | :ok | true | {:error, reason} | nil | false)
   @type input_options :: [
           validators: [validator_function],
-          description: String.t()
+          description: String.t(),
+          options: Keyword.t()
         ]
   @type t :: {input_type, atom, input_options}
 
@@ -27,6 +28,7 @@ defmodule ChoreRunner.Input do
   end
 
   defp do_cast(value, :string), do: to_string(value)
+  defp do_cast(value, :select), do: value
 
   defp do_cast(value, :int) when is_binary(value) do
     case Integer.parse(value) do
@@ -59,6 +61,7 @@ defmodule ChoreRunner.Input do
   defp do_validate(:int, value) when is_integer(value), do: {:ok, value}
   defp do_validate(:float, value) when is_float(value), do: {:ok, value}
   defp do_validate(:bool, value) when is_boolean(value), do: {:ok, value}
+  defp do_validate(:select, value), do: {:ok, value}
   defp do_validate(:file, %module{} = value) when module == Plug.Upload, do: {:ok, value}
 
   defp do_validate(:file, path) when is_binary(path) do

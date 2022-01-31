@@ -7,8 +7,8 @@
     <button phx-click="deselect_chore"> X</button>
   </div>
   <div class="chore-modal-text-container">
-    <%= for {message, timestamp} <- @chore.logs do %>
-      <p id="<%= "#{@chore.id}-#{timestamp}" %>"><%= timestamp %> <%= message %></p>
+    <%= for {log, timestamp, opts} <- @chore.logs do %>
+      <p id="<%= "#{@chore.id}-#{timestamp}" %>"> <%= log({log, timestamp, opts}) %></p>
     <% end %>
   </div>
   <div class="chore-modal-bottom-container">

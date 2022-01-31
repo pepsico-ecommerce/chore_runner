@@ -40,8 +40,8 @@ defmodule ChoreRunner.Reporter do
   def report_failed(reason),
     do: GenServer.cast(get_reporter_pid(), {:chore_failed, reason, DateTime.utc_now()})
 
-  def log(message),
-    do: GenServer.cast(get_reporter_pid(), {:log, message, DateTime.utc_now()})
+  def log(message, opts \\ %{html: false, timestamp: true}),
+    do: GenServer.cast(get_reporter_pid(), {:log, message, DateTime.utc_now(), opts})
 
   def set_counter(name, value), do: do_update_counter(name, value, :set)
   def inc_counter(name, amount), do: do_update_counter(name, amount, :inc)
@@ -128,8 +128,8 @@ defmodule ChoreRunner.Reporter do
     {:noreply, new_state}
   end
 
-  def handle_cast({:log, message, timestamp}, state) do
-    {:noreply, %{state | chore: put_log(state.chore, message, timestamp)}}
+  def handle_cast({:log, message, timestamp, opts}, state) do
+    {:noreply, %{state | chore: put_log(state.chore, message, timestamp, opts)}}
   end
 
   def handle_cast({:update_counter, name, value, operation}, state) when is_number(value),
@@ -188,8 +188,13 @@ defmodule ChoreRunner.Reporter do
   defp do_update_values(original, value, :inc), do: original + value
   defp do_update_values(_original, value, :set), do: value
 
-  defp put_log(%Chore{logs: logs} = chore, log, timestamp),
-    do: %Chore{chore | logs: [{log, timestamp} | logs]}
+  defp put_log(
+         %Chore{logs: logs} = chore,
+         log,
+         timestamp,
+         opts \\ %{html: false, timestamp: true}
+       ),
+       do: %Chore{chore | logs: [{log, timestamp, opts} | logs]}
 
   defp put_reporter_pid_in_process(reporter_pid), do: Process.put(@process_dict_key, reporter_pid)
 

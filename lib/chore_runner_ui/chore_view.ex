@@ -5,9 +5,31 @@ defmodule ChoreRunnerUI.ChoreView do
 
   defp styles, do: @styles
 
-  defp first_log([{log, ts} | _]) do
-    "[#{ts}] #{log}"
+  defp log({log, ts, opts}) do
+    log
+    |> maybe_add_timestamp(ts, opts)
+    |> maybe_allow_raw_html(opts)
+  end
+
+  defp first_log([log | _]) do
+    log(log)
   end
 
   defp first_log(_), do: ""
+
+  defp maybe_add_timestamp(log, _ts, %{timestamp: false}) do
+    log
+  end
+
+  defp maybe_add_timestamp(log, ts, _) do
+    "[#{ts}] #{log}"
+  end
+
+  defp maybe_allow_raw_html(log, %{html: true}) do
+    raw(log)
+  end
+
+  defp maybe_allow_raw_html(log, _) do
+    log
+  end
 end
