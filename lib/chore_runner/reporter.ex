@@ -40,7 +40,7 @@ defmodule ChoreRunner.Reporter do
   def report_failed(reason),
     do: GenServer.cast(get_reporter_pid(), {:chore_failed, reason, DateTime.utc_now()})
 
-  def log(message, opts \\ %{html: false, timestamp: true}),
+  def log(message, opts \\ [html: false, timestamp: true]),
     do: GenServer.cast(get_reporter_pid(), {:log, message, DateTime.utc_now(), opts})
 
   def set_counter(name, value), do: do_update_counter(name, value, :set)
@@ -192,7 +192,7 @@ defmodule ChoreRunner.Reporter do
          %Chore{logs: logs} = chore,
          log,
          timestamp,
-         opts \\ %{html: false, timestamp: true}
+         opts \\ [html: false, timestamp: true]
        ),
        do: %Chore{chore | logs: [{log, timestamp, opts} | logs]}
 

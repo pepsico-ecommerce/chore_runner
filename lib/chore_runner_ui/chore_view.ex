@@ -7,8 +7,8 @@ defmodule ChoreRunnerUI.ChoreView do
 
   defp log({log, ts, opts}) do
     log
-    |> maybe_add_timestamp(ts, opts)
-    |> maybe_allow_raw_html(opts)
+    |> maybe_add_timestamp(ts, Keyword.get(opts, :timestamp))
+    |> maybe_allow_raw_html(Keyword.get(opts, :html))
   end
 
   defp first_log([log | _]) do
@@ -17,7 +17,7 @@ defmodule ChoreRunnerUI.ChoreView do
 
   defp first_log(_), do: ""
 
-  defp maybe_add_timestamp(log, _ts, %{timestamp: false}) do
+  defp maybe_add_timestamp(log, _ts, false) do
     log
   end
 
@@ -25,7 +25,7 @@ defmodule ChoreRunnerUI.ChoreView do
     "[#{ts}] #{log}"
   end
 
-  defp maybe_allow_raw_html(log, %{html: true}) do
+  defp maybe_allow_raw_html(log, true) do
     raw(log)
   end
 

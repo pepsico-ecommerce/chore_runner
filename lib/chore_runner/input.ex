@@ -15,9 +15,16 @@ defmodule ChoreRunner.Input do
   defguard valid_type(type) when type in @valid_types
 
   for type <- @valid_types do
-    @spec unquote(type)(atom(), input_options) :: t
-    def unquote(type)(name, opts \\ []) do
-      {unquote(type), name, opts}
+    if type == :select do
+      @spec unquote(type)(atom(), Keyword.t(), input_options) :: t
+      def select(name, select_options, opts \\ []) do
+        {:select, name, select_options, opts}
+      end
+    else
+      @spec unquote(type)(atom(), input_options) :: t
+      def unquote(type)(name, opts \\ []) do
+        {unquote(type), name, opts}
+      end
     end
   end
 
