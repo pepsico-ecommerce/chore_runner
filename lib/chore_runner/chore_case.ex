@@ -3,16 +3,18 @@ defmodule ChoreRunner.ChoreCase do
 
   using do
     quote do
-      defmacro assert_logged(log) do
+      defmacro assert_logged(log, opts \\ []) do
+        exact_match? = Keyword.get(opts, :exact, false)
         quote do
           assert Process.get(ChoreRunner.Reporter.__process_dict_key__())
                  |> GenServer.call(
                    {:assert_logged,
                     fn
                       {:log, log, _} ->
-                        case unquote(log) do
-                          %Regex{} = regex -> log =~ regex
-                          bin when is_binary(bin) -> log == bin
+                        if unquote(exact_match?) do
+                          log == unquote(log)
+                        else
+                          log =~ unquote(log)
                         end
 
                       _ ->
