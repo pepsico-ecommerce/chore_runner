@@ -10,7 +10,10 @@ defmodule ChoreRunner.ChoreCase do
                    {:assert_logged,
                     fn
                       {:log, log, _} ->
-                        log == unquote(log)
+                        case unquote(log) do
+                          %Regex{} = regex -> log =~ regex
+                          bin when is_binary(bin) -> log == bin
+                        end
 
                       _ ->
                         false
