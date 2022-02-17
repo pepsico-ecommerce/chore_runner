@@ -168,6 +168,15 @@ defmodule ChoreRunner.Reporter do
   def handle_info({ref, result}, %{chore: %{task: %{ref: ref}}} = state),
     do: {:noreply, put_in(state.chore.result, result)}
 
+  def handle_info({:DOWN, ref, _, _, {error, trace}}, %{chore: %{task: %{ref: ref}}} = state) do
+    {:stop, :normal,
+     fail_chore(
+       state,
+       "Failed due to error:\n#{inspect(error)}\n#{inspect(trace)}",
+       DateTime.utc_now()
+     )}
+  end
+
   def handle_info({:DOWN, ref, _, _, _}, %{chore: %{task: %{ref: ref}}} = state),
     do: {:stop, :normal, state}
 
