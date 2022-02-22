@@ -189,7 +189,7 @@ defmodule ChoreRunner.Reporter do
   defp do_update_values(_original, value, :set), do: value
 
   defp put_log(%Chore{logs: logs} = chore, log, timestamp),
-    do: %Chore{chore | logs: [{log, timestamp} | logs]}
+    do: %Chore{chore | logs: logs ++ [{log, timestamp}]}
 
   defp put_reporter_pid_in_process(reporter_pid), do: Process.put(@process_dict_key, reporter_pid)
 
