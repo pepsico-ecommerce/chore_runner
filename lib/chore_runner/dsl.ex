@@ -24,6 +24,7 @@ defmodule ChoreRunner.DSL do
           float: 2,
           file: 2,
           bool: 2,
+          select: 2,
           select: 3,
           string: 1,
           int: 1,

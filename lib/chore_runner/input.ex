@@ -34,6 +34,10 @@ defmodule ChoreRunner.Input do
     do_validate(type, do_cast(value, type))
   end
 
+  def validate_field(type, value, args) when valid_type(type) do
+    do_validate(type, do_cast(value, type), args)
+  end
+
   defp do_cast(value, :string), do: to_string(value)
   defp do_cast(value, :select), do: value
 
@@ -68,7 +72,7 @@ defmodule ChoreRunner.Input do
   defp do_validate(:int, value) when is_integer(value), do: {:ok, value}
   defp do_validate(:float, value) when is_float(value), do: {:ok, value}
   defp do_validate(:bool, value) when is_boolean(value), do: {:ok, value}
-  defp do_validate(:select, value), do: {:ok, value}
+
   defp do_validate(:file, %module{} = value) when module == Plug.Upload, do: {:ok, value}
 
   defp do_validate(:file, path) when is_binary(path) do
@@ -76,4 +80,14 @@ defmodule ChoreRunner.Input do
   end
 
   defp do_validate(_, _), do: {:error, :invalid}
+
+  defp do_validate(:select, value, args) do
+    if Enum.any?(args, fn {_key, select_value} -> value == select_value end) do
+      {:ok, value}
+    else
+      {:error, :not_in_options}
+    end
+  end
+
+  defp do_validate(_, _, _), do: {:error, :invalid}
 end

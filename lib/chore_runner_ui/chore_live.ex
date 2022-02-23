@@ -286,7 +286,7 @@ defmodule ChoreRunnerUI.ChoreLive do
 
   defp enable_file_inputs(%{assigns: %{inputs: inputs}} = socket) do
     inputs
-    |> Enum.filter(fn {type, _key, _opts} -> type == :file end)
+    |> Enum.filter(fn input -> input |> Tuple.to_list() |> Enum.at(0) == :file end)
     |> Enum.reduce(socket, fn {:file, key, _opts}, socket ->
       allow_upload(socket, key, accept: :any, max_entries: 1)
     end)

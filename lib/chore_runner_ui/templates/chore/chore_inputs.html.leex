@@ -20,7 +20,7 @@
   <% :select -> %>
     <div class="chore-form-input-wrapper chore-form-top-level-input-wrapper">
       <%= label @form, @key, class: "chore-form-label", title: Keyword.get(@opts, :description, "") %>
-      <%= select @form, @key, Keyword.get(@opts, :options, []), class: "chore-form-input chore-form-select", phx_update: "ignore" %>
+      <%= select @form, @key, @args, class: "chore-form-input chore-form-select", phx_update: "ignore" %>
       <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
     </div>
   <% :file -> %>
