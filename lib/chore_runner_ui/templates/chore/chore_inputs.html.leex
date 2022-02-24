@@ -1,26 +1,32 @@
 <%= case @type do %>
   <% :bool -> %>
     <div class="chore-form-input-wrapper chore-form-top-level-input-wrapper">
-      <%= label @form, @key, class: "chore-form-label" %>
+      <%= label @form, @key, class: "chore-form-label", title: Keyword.get(@opts, :description, "") %>
       <%= checkbox @form, @key, class: "chore-form-input chore-form-checkbox", phx_update: "ignore" %>
       <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
     </div>
   <% :string -> %>
     <div class="chore-form-input-wrapper chore-form-top-level-input-wrapper">
-      <%= label @form, @key, class: "chore-form-label" %>
+      <%= label @form, @key, class: "chore-form-label", title: Keyword.get(@opts, :description, "") %>
       <%= text_input @form, @key, class: "chore-form-input chore-form-text-input", phx_update: "ignore" %>
       <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
     </div>
   <% type when type in [:int, :float] -> %>
     <div class="chore-form-input-wrapper chore-form-top-level-input-wrapper">
-      <%= label @form, @key, class: "chore-form-label" %>
+      <%= label @form, @key, class: "chore-form-label", title: Keyword.get(@opts, :description, "") %>
       <%= number_input @form, @key, class: "chore-form-input chore-form-text-input chore-form-number-input", phx_update: "ignore" %>
+      <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
+    </div>
+  <% :select -> %>
+    <div class="chore-form-input-wrapper chore-form-top-level-input-wrapper">
+      <%= label @form, @key, class: "chore-form-label", title: Keyword.get(@opts, :description, "") %>
+      <%= select @form, @key, @args, class: "chore-form-input chore-form-select", phx_update: "ignore" %>
       <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
     </div>
   <% :file -> %>
     <div class="chore-form-file-input-wrapper chore-form-top-level-input-wrapper" phx-drop-target="<%= Map.get(@uploads, @key).ref %>">
       <div class="chore-form-input-wrapper">
-        <%= label @form, @key, class: "chore-form-label" %>
+        <%= label @form, @key, class: "chore-form-label" , title: Keyword.get(@opts, :description, "")%>
         <%= live_file_input Map.get(@uploads, @key), class: "chore-form-input chore-form-file-input" %>
       </div>
       <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>

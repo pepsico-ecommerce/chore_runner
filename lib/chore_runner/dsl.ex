@@ -12,6 +12,7 @@ defmodule ChoreRunner.DSL do
         only: [
           report_failed: 1,
           log: 1,
+          log: 2,
           set_counter: 2,
           inc_counter: 2
         ]
@@ -23,6 +24,8 @@ defmodule ChoreRunner.DSL do
           float: 2,
           file: 2,
           bool: 2,
+          select: 2,
+          select: 3,
           string: 1,
           int: 1,
           float: 1,

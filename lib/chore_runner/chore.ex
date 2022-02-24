@@ -91,8 +91,9 @@ defmodule ChoreRunner.Chore do
     expected_inputs = mod.inputs
 
     Enum.reduce(input, {%{}, []}, fn {key, val}, {validated_inputs, errors_acc} ->
-      with {:ok, {type, name, opts}} <- verify_valid_input_name(expected_inputs, key),
-           {:ok, validated_value} <- validate_input(name, val, type, opts) do
+      with {:ok, input} <- verify_valid_input_name(expected_inputs, key),
+           name <- input |> Tuple.to_list() |> Enum.at(1),
+           {:ok, validated_value} <- do_validate_input(val, input) do
         {Map.put(validated_inputs, name, validated_value), errors_acc}
       else
         {:error, :invalid_input_name} ->
@@ -109,12 +110,20 @@ defmodule ChoreRunner.Chore do
   end
 
   defp verify_valid_input_name(expected_inputs, key) do
-    Enum.find_value(expected_inputs, fn {type, name, opts} ->
-      if name == key or "#{name}" == key do
-        {:ok, {type, name, opts}}
-      else
-        false
-      end
+    Enum.find_value(expected_inputs, fn
+      {type, name, args, opts} ->
+        if name == key or "#{name}" == key do
+          {:ok, {type, name, args, opts}}
+        else
+          false
+        end
+
+      {type, name, opts} ->
+        if name == key or "#{name}" == key do
+          {:ok, {type, name, opts}}
+        else
+          false
+        end
     end)
     |> case do
       nil -> {:error, :invalid_input_name}
@@ -122,7 +131,7 @@ defmodule ChoreRunner.Chore do
     end
   end
 
-  defp validate_input(name, value, type, opts) do
+  defp do_validate_input(value, {type, name, opts}) do
     [(&Input.validate_field(type, &1)) | Keyword.get(opts, :validators, [])]
     |> Enum.reduce({value, []}, fn validator, {val, errors} ->
       case validator.(val) do
@@ -138,6 +147,28 @@ defmodule ChoreRunner.Chore do
     |> case do
       {final_value, [] = _no_errors} -> {:ok, final_value}
       {_invalid, errors} -> {:error, name, errors}
+    end
+  end
+
+  defp do_validate_input(value, {type, name, args, opts}) do
+    [(&Input.validate_field(type, &1, args)) | Keyword.get(opts, :validators, [])]
+    |> Enum.reduce({value, []}, fn validator, {val, errors} ->
+      case validator.(val) do
+        {:ok, validated_value} -> {validated_value, errors}
+        :ok -> {val, errors}
+        true -> {val, errors}
+        {:error, reason} -> {val, [reason | errors]}
+        false -> {val, ["invalid" | errors]}
+        nil -> {val, ["invalid" | errors]}
+        other -> {other, errors}
+      end
+    end)
+    |> case do
+      {final_value, [] = _no_errors} ->
+        {:ok, final_value}
+
+      {_invalid, errors} ->
+        {:error, name, errors}
     end
   end
 end
