@@ -5,6 +5,7 @@ defmodule ChoreRunner.ChoreCase do
     quote do
       defmacro assert_logged(log, opts \\ []) do
         exact_match? = Keyword.get(opts, :exact, false)
+
         quote do
           assert Process.get(ChoreRunner.Reporter.__process_dict_key__())
                  |> GenServer.call(

@@ -58,7 +58,7 @@ defmodule ChoreRunnerUI.ChoreLive do
         session: session,
         inputs: [],
         file_inputs: [],
-        selected_chore: nil,
+        selected_chore: nil
       )
       |> set_inputs(nil)
 
@@ -106,7 +106,9 @@ defmodule ChoreRunnerUI.ChoreLive do
   def handle_event(
         "form_changed",
         %{"run_chore" => %{"chore" => chore_name} = attrs},
-        %{assigns: %{uri: uri, chores: chores, currently_selected_chore: currently_selected_chore}} = socket
+        %{
+          assigns: %{uri: uri, chores: chores, currently_selected_chore: currently_selected_chore}
+        } = socket
       ) do
     selected_chore = chores[chore_name]
 
