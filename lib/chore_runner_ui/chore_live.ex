@@ -15,9 +15,7 @@ defmodule ChoreRunnerUI.ChoreLive do
   ```
   A pubsub MUST BE RUNNING and configured for both the Chore supervisor and the Chore LiveView for the Chore UI to function.
 
-  Make the Chore LiveView accessible in your Phoenix web app, either in a template or in the router.
-  ### Template
-  `<%= live_render(@conn, ChoreRunnerUI.ChoreLive, session: %{"otp_app" => :my_app, "chore_root" => MyApp.Chores, "pubsub" => MyApp.PubSub}) %>`
+  Make the Chore LiveView accessible in your Phoenix web app by modifying the router.
 
   ### Router
   ```
@@ -30,7 +28,7 @@ defmodule ChoreRunnerUI.ChoreLive do
     pipe_through :browser
 
     live_session :chores, session: @chore_session do
-      live "/", ChoreRunnerUI.ChoreLive
+      live "/", ChoreRunnerUI.ChoreLive, :index
     end
   end
   ```
