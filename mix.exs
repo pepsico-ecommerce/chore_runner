@@ -12,7 +12,8 @@ defmodule ChoreRunner.MixProject do
       package: package(),
       description: """
       An Elixir library for writing and running code chores.
-      """
+      """,
+      aliases: aliases()
     ]
   end
 
@@ -38,7 +39,16 @@ defmodule ChoreRunner.MixProject do
       maintainers: ["Chris Freeze"],
       licenses: ["Apache 2.0"],
       links: %{github: "https://github.com/pepsico-ecommerce/chore_runner"},
-      files: ~w(lib priv/css mix.exs README.md .formatter.exs)
+      files: ~w(lib priv/css mix.exs README.md CHANGELOG.md .formatter.exs)
     ]
+  end
+
+  defp aliases do
+    [publish: ["hex.publish", &git_tag/1]]
+  end
+
+  defp git_tag(_args) do
+    System.cmd("git", ["tag", "v" <> Mix.Project.config()[:version]])
+    System.cmd("git", ["push", "--tags"])
   end
 end
