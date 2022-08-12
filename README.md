@@ -51,7 +51,7 @@ scope "/" do
   pipe_through :browser
 
   live_session :chores, session: @chore_session do
-    live "/chores", ChoreRunnerUI.ChoreLive
+    live "/chores", ChoreRunnerUI.ChoreLive, :index
   end
 end
 ```

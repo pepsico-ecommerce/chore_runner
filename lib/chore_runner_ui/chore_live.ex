@@ -15,9 +15,7 @@ defmodule ChoreRunnerUI.ChoreLive do
   ```
   A pubsub MUST BE RUNNING and configured for both the Chore supervisor and the Chore LiveView for the Chore UI to function.
 
-  Make the Chore LiveView accessible in your Phoenix web app, either in a template or in the router.
-  ### Template
-  `<%= live_render(@conn, ChoreRunnerUI.ChoreLive, session: %{"otp_app" => :my_app, "chore_root" => MyApp.Chores, "pubsub" => MyApp.PubSub}) %>`
+  Make the Chore LiveView accessible in your Phoenix web app by modifying the router.
 
   ### Router
   ```
@@ -30,7 +28,7 @@ defmodule ChoreRunnerUI.ChoreLive do
     pipe_through :browser
 
     live_session :chores, session: @chore_session do
-      live "/", ChoreRunnerUI.ChoreLive
+      live "/", ChoreRunnerUI.ChoreLive, :index
     end
   end
   ```
@@ -44,15 +42,10 @@ defmodule ChoreRunnerUI.ChoreLive do
   alias ChoreRunnerUI.ChoreView
   require Logger
 
+  @impl true
   def mount(params, session, socket) do
     subscribe_to_pubsub(session)
     chores = list_chores(session)
-
-    {selected_chore_name, selected_chore} =
-      case Map.to_list(chores) do
-        [{selected_chore_name, selected_chore} | _] -> {selected_chore_name, selected_chore}
-        _ -> {nil, nil}
-      end
 
     socket =
       assign(socket,
@@ -63,17 +56,47 @@ defmodule ChoreRunnerUI.ChoreLive do
         session: session,
         inputs: [],
         file_inputs: [],
-        currently_selected_chore: selected_chore,
-        form_selected_chore: selected_chore_name,
-        chore_errors: %{},
-        is_chore_valid: true,
         selected_chore: nil
       )
-      |> set_inputs(selected_chore && selected_chore.inputs())
+      |> set_inputs(nil)
 
     {:ok, socket}
   end
 
+  @impl true
+  def handle_params(params, url, %{assigns: %{chores: chores}} = socket) do
+    chore_name = Map.get(params, "chore") || Map.keys(chores) |> List.first()
+    selected_chore = chores[chore_name]
+
+    if selected_chore do
+      socket =
+        socket
+        |> assign(
+          currently_selected_chore: selected_chore,
+          chore_name: chore_name,
+          chore_errors: %{},
+          is_chore_valid: true,
+          uri: URI.parse(url)
+        )
+        |> set_inputs(selected_chore.inputs())
+
+      {:noreply, socket}
+    else
+      socket =
+        socket
+        |> assign(
+          currently_selected_chore: nil,
+          chore_name: nil,
+          chore_errors: %{},
+          is_chore_valid: false,
+          uri: URI.parse(url)
+        )
+
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
   def render(assigns) do
     ChoreView.render("index.html", assigns)
   end
@@ -81,7 +104,9 @@ defmodule ChoreRunnerUI.ChoreLive do
   def handle_event(
         "form_changed",
         %{"run_chore" => %{"chore" => chore_name} = attrs},
-        %{assigns: %{chores: chores, currently_selected_chore: currently_selected_chore}} = socket
+        %{
+          assigns: %{uri: uri, chores: chores, currently_selected_chore: currently_selected_chore}
+        } = socket
       ) do
     selected_chore = chores[chore_name]
 
@@ -96,20 +121,14 @@ defmodule ChoreRunnerUI.ChoreLive do
 
       {:noreply, assign_errors(socket, errors)}
     else
-      socket =
-        socket
-        |> assign(
-          currently_selected_chore: selected_chore,
-          form_selected_chore: chore_name,
-          chore_errors: %{},
-          is_chore_valid: true
-        )
-        |> set_inputs(selected_chore.inputs())
+      # [SRC](https://elixirforum.com/t/liveview-push-patch-append-to-params/30964/9)
+      to = uri.path <> "?" <> URI.encode_query(%{chore: chore_name})
 
-      {:noreply, socket}
+      {:noreply, push_patch(socket, to: to)}
     end
   end
 
+  @impl true
   def handle_event("run_chore", %{"run_chore" => %{"chore" => chore_name} = attrs}, socket) do
     file_attrs =
       Enum.map(socket.assigns.file_inputs, fn file_input ->
@@ -139,9 +158,11 @@ defmodule ChoreRunnerUI.ChoreLive do
     {:noreply, assign_errors(socket, errors)}
   end
 
+  @impl true
   def handle_event("stop_chore", _, %{assigns: %{running_chores: []}} = socket),
     do: {:noreply, socket}
 
+  @impl true
   def handle_event("stop_chore", %{"id" => id}, %{assigns: %{running_chores: chores}} = socket) do
     chores
     |> Enum.find(&(&1.id == id))
@@ -150,24 +171,29 @@ defmodule ChoreRunnerUI.ChoreLive do
     {:noreply, socket}
   end
 
+  @impl true
   def handle_event("dismiss_chore", %{"id" => id}, socket) do
     {:noreply, remove_running_chore(socket, id)}
   end
 
+  @impl true
   def handle_event("select_chore", %{"chore" => id}, socket) do
     selected_chore = Enum.find(socket.assigns.running_chores, &(&1.id == id))
     {:noreply, assign(socket, :selected_chore, selected_chore)}
   end
 
+  @impl true
   def handle_event("deselect_chore", _, socket) do
     {:noreply, assign(socket, :selected_chore, nil)}
   end
 
+  @impl true
   def handle_event(event, _attrs, socket) do
     Logger.debug("Unhandled event #{inspect(event)} in ChoreRunnerUI.ChoreLive")
     {:noreply, socket}
   end
 
+  @impl true
   def handle_info({:chore_started, chore}, socket) do
     {:noreply,
      assign(
