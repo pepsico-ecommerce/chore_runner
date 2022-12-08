@@ -15,6 +15,10 @@ defmodule ChoreRunner.ChoreCase.TestReporter do
     {:reply, Enum.find(state, enum_func), state}
   end
 
+  def handle_call(:get_state, _from, state) do
+    {:reply, state, state}
+  end
+
   def handle_call(event, _, state), do: {:reply, :ok, [event | state]}
 
   def assert_event(pid, event) do
