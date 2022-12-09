@@ -5,29 +5,33 @@ defmodule ChoreRunner.Chore do
   require ChoreRunner.DSL
   alias ChoreRunner.{DSL, Input}
 
-  defstruct id: nil,
-            mod: nil,
-            logs: [],
-            values: %{},
-            task: nil,
-            reporter: nil,
-            started_at: nil,
+  defstruct extra_data: %{},
             finished_at: nil,
-            result: nil
+            id: nil,
+            inputs: %{},
+            logs: [],
+            mod: nil,
+            reporter: nil,
+            result: nil,
+            started_at: nil,
+            task: nil,
+            values: %{}
 
   defmacro __using__(_args), do: DSL.using()
 
   @type unix_timestamp :: integer()
   @type t :: %__MODULE__{
-          id: String.t(),
-          mod: module(),
-          logs: [{unix_timestamp, String.t()}],
-          values: %{atom() => number()},
-          task: Task.t(),
-          reporter: pid(),
-          started_at: DateTime.t(),
+          extra_data: map(),
           finished_at: DateTime.t(),
-          result: any()
+          id: String.t(),
+          inputs: map(),
+          logs: [{unix_timestamp, String.t()}],
+          mod: module(),
+          reporter: pid(),
+          result: any(),
+          started_at: DateTime.t(),
+          task: Task.t(),
+          values: %{atom() => number()}
         }
 
   @doc """

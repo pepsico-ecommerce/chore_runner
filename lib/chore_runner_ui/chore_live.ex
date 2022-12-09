@@ -149,8 +149,10 @@ defmodule ChoreRunnerUI.ChoreLive do
     chore = socket.assigns.chores[chore_name]
     chore_attrs = Map.get(attrs, "chore_attrs", %{}) |> Map.merge(file_attrs)
 
+    extra_data = socket.assigns.session["extra_data"]
+
     errors =
-      case ChoreRunner.run_chore(chore, chore_attrs) do
+      case ChoreRunner.run_chore(chore, chore_attrs, extra_data: extra_data) do
         {:ok, _} -> []
         {:error, errors} -> errors
       end

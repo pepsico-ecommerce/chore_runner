@@ -91,14 +91,18 @@ defmodule ChoreRunner do
   If any inputs fail validation, the chore will not run, and instead an error tuple will be returned.
   If all validations pass, the chore will then be run.
 
-  Currently, no options are supported.
+  Opts
+    * extra_data: Map of any additional data to be stored with the chore. This is useful
+      for things such as storing the admin on the chore which can be used in telemetry
+      events.
 
   """
   @spec run_chore(module(), map(), Keyword.t()) :: {:ok, Chore.t()} | {:error, any()}
   def run_chore(chore_mod, input, opts \\ []) do
-    chore = %Chore{mod: chore_mod, id: gen_id()}
+    extra_data = Keyword.get(opts, :extra_data, %{})
+    chore = %Chore{mod: chore_mod, id: gen_id(), inputs: input, extra_data: extra_data}
 
-    with {:ok, validated_input} <- Chore.validate_input(chore, input),
+    with {:ok, validated_input} <- Chore.validate_input(chore, input) |> IO.inspect(label: "VALIDATE_INPUT"),
          {:ok, updated_chore = %Chore{reporter: pid}} when not is_nil(pid) <-
            do_start_reporter(chore, opts),
          {:ok, started_chore} <- do_start_chore(updated_chore, validated_input, opts) do
