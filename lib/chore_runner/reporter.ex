@@ -155,6 +155,7 @@ defmodule ChoreRunner.Reporter do
       new_state
       | chore: put_log(new_state.chore, "Failed with reason: #{reason}", timestamp)
     }
+
     emit_telemetry(:chore_failed, %{state: new_state, error_reason: reason})
     broadcast(new_state.pubsub, new_state.chore, :chore_failed)
     new_state
@@ -259,7 +260,9 @@ defmodule ChoreRunner.Reporter do
     :stop_chore,
     :update_counter
   ]
+
   defp emit_telemetry(event, meta, measurements \\ %{})
+
   for event <- events do
     defp emit_telemetry(unquote(event), meta, measurements) do
       [:chore_runner, :reporter, unquote(event)]

@@ -102,7 +102,7 @@ defmodule ChoreRunner do
     extra_data = Keyword.get(opts, :extra_data, %{})
     chore = %Chore{mod: chore_mod, id: gen_id(), inputs: input, extra_data: extra_data}
 
-    with {:ok, validated_input} <- Chore.validate_input(chore, input) |> IO.inspect(label: "VALIDATE_INPUT"),
+    with {:ok, validated_input} <- Chore.validate_input(chore, input),
          {:ok, updated_chore = %Chore{reporter: pid}} when not is_nil(pid) <-
            do_start_reporter(chore, opts),
          {:ok, started_chore} <- do_start_chore(updated_chore, validated_input, opts) do
