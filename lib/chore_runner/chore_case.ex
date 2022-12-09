@@ -24,12 +24,6 @@ defmodule ChoreRunner.ChoreCase do
                  )
         end
       end
-
-      def get_state do
-        ChoreRunner.Reporter.__process_dict_key__()
-        |> Process.get()
-        |> GenServer.call(:get_state)
-      end
     end
   end
 

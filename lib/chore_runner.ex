@@ -95,10 +95,13 @@ defmodule ChoreRunner do
     * extra_data: Map of any additional data to be stored with the chore. This is useful
       for things such as storing the admin on the chore which can be used in telemetry
       events.
-
+    * result_handler: Single arity anonymous function or MFA of a single arity function
+      that is called once the chore is finished. The function will take the %Chore{}.
   """
   @spec run_chore(module(), map(), Keyword.t()) :: {:ok, Chore.t()} | {:error, any()}
   def run_chore(chore_mod, input, opts \\ []) do
+    opts = Keyword.put_new_lazy(opts, :result_handler, fn -> &chore_mod.result_handler/1 end)
+    # opts = merge_default_opts(opts, chore_mod)
     extra_data = Keyword.get(opts, :extra_data, %{})
     chore = %Chore{mod: chore_mod, id: gen_id(), inputs: input, extra_data: extra_data}
 
@@ -109,6 +112,18 @@ defmodule ChoreRunner do
       {:ok, started_chore}
     end
   end
+
+  # defp merge_default_opts(opts, chore_mod) do
+  #   Keyword.put_new_lazy(opts, :result_handler, fn ->
+  #     if function_exported?(chore_mod, :result_handler, 1) do
+  #       &chore_mod.result_handler/1
+  #     else
+  #       fn chore ->
+  #         IO.inspect(chore, label: "DEFAULT_NOT_EXPORTED")
+  #       end
+  #     end
+  #   end)
+  # end
 
   @doc """
   Stops the provided chore by terminating both the chore task and the reporter.
