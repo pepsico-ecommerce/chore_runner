@@ -17,9 +17,7 @@ defmodule ChoreRunner.Chore do
             task: nil,
             values: %{}
 
-  defmacro __using__(opts) do
-    DSL.using(opts)
-  end
+  defmacro __using__(opts), do: DSL.using(opts)
 
   @type unix_timestamp :: integer()
   @type t :: %__MODULE__{

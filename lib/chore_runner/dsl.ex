@@ -22,7 +22,7 @@ defmodule ChoreRunner.DSL do
   end
 
   def parse_result_handler(handler) do
-    raise "result_handler must be a single arity function, MFA of a single arity function, or nil. Got: #{inspect(handler)}"
+    raise "result_handler must be an anonymous function, function capture, MFA of a single arity function, or nil. Got: #{inspect(handler)}"
   end
 
   def using(opts) do
@@ -59,9 +59,7 @@ defmodule ChoreRunner.DSL do
         do: Chore.validate_input(%Chore{mod: __MODULE__}, input)
 
       def result_handler(chore) do
-        # unquote(__MODULE__).parse_result_handler(unquote(opts)[:result_handler]).(chore)
         result_handler = unquote(__MODULE__).parse_result_handler(unquote(opts)[:result_handler])
-
         result_handler.(chore)
       end
 

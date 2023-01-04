@@ -100,8 +100,7 @@ defmodule ChoreRunner do
   """
   @spec run_chore(module(), map(), Keyword.t()) :: {:ok, Chore.t()} | {:error, any()}
   def run_chore(chore_mod, input, opts \\ []) do
-    opts = Keyword.put_new_lazy(opts, :result_handler, fn -> &chore_mod.result_handler/1 end)
-    # opts = merge_default_opts(opts, chore_mod)
+    opts = merge_default_opts(opts, chore_mod)
     extra_data = Keyword.get(opts, :extra_data, %{})
     chore = %Chore{mod: chore_mod, id: gen_id(), inputs: input, extra_data: extra_data}
 
@@ -113,17 +112,15 @@ defmodule ChoreRunner do
     end
   end
 
-  # defp merge_default_opts(opts, chore_mod) do
-  #   Keyword.put_new_lazy(opts, :result_handler, fn ->
-  #     if function_exported?(chore_mod, :result_handler, 1) do
-  #       &chore_mod.result_handler/1
-  #     else
-  #       fn chore ->
-  #         IO.inspect(chore, label: "DEFAULT_NOT_EXPORTED")
-  #       end
-  #     end
-  #   end)
-  # end
+  defp merge_default_opts(opts, chore_mod) do
+    Keyword.put_new_lazy(opts, :result_handler, fn ->
+      if function_exported?(chore_mod, :result_handler, 1) do
+        &chore_mod.result_handler/1
+      else
+        & &1
+      end
+    end)
+  end
 
   @doc """
   Stops the provided chore by terminating both the chore task and the reporter.

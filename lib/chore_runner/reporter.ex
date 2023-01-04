@@ -126,7 +126,6 @@ defmodule ChoreRunner.Reporter do
     new_state = %{state | chore: %{state.chore | finished_at: timestamp, result: result}}
     emit_telemetry(:chore_finished, %{chore: %{state.chore | result: nil}})
     broadcast(new_state.pubsub, new_state.chore, :chore_finished)
-    IO.inspect(state.finished_function, label: "FINSIHED_FUN")
     state.finished_function.(new_state.chore)
     {:noreply, new_state}
   end
