@@ -5,6 +5,7 @@ An Elixir library for writing and running code chores.
 - [Installation](#installation)
 - [Writing a Chore](#writing-a-chore)
 - [Chore Reporting](#chore-reporting)
+- [Telemetry](#telemetry)
 - [Contribution](#contribution)
 ## Motivation
 ### What is a "Chore"?
@@ -150,6 +151,30 @@ The meat of your chore will reside in the `run/1` callback. When you run a chore
   Increments the specified counter by the provided value. If the value does not exist, the value defaults to 0, then is incremented.
 
 These functions work in both the main chore process, and certain spawned processes such as via `Task.async_stream` for parellelization. Attempting to call these functions outside of those conditions will result in an exception.
+
+## Telemetry
+The following telemetry events are sent from the `ChoreRunner.Reporter`
+- `[:chore_runner, :reporter, :chore_failed]`
+  - Emitted when chore has failed.
+  - Sends `%{state: chore_state, error_reason: reason}`.
+- `[:chore_runner, :reporter, :chore_finished]`
+  - Emitted when chore has finished.
+  - Sends `%Chore{result: nil}` where the result is set to nil to avoid sending large results through telemetry. 
+- `[:chore_runner, :reporter, :init]`
+  - Emitted when the reporter is started.
+  - Sends `%{chore: chore, opts: init_opts}`.
+- `[:chore_runner, :reporter, :log]`
+  - Emitted when a log is added.
+  - Sends `%{state: chore_state}`.
+- `[:chore_runner, :reporter, :start_chore]`
+  - Emitted when a chore is started.
+  - Sends `%{state: chore_state}`.
+- `[:chore_runner, :reporter, :stop_chore]`
+  - Emitted when a chore is stopped.
+  - Sends `%{status: status, state: chore_state}` where state is `:ok | :error`.
+- `[:chore_runner, :reporter, :update_counter]`
+  - Emitted when counter is updated.
+  - Sends `%{state: chore_state}`.
 
 ## Contribution
 

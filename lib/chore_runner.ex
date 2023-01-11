@@ -91,12 +91,17 @@ defmodule ChoreRunner do
   If any inputs fail validation, the chore will not run, and instead an error tuple will be returned.
   If all validations pass, the chore will then be run.
 
-  Currently, no options are supported.
-
+  Opts
+    * extra_data: Map of arbitrary data to be forwarded to telemetry events and result handlers.
+      Useful for storing chore session information, such as identifying who or what ran the chore.
+    * result_handler: Single arity anonymous function or MFA of a single arity function
+      that is called once the chore is finished. The function will take the %Chore{}.
   """
   @spec run_chore(module(), map(), Keyword.t()) :: {:ok, Chore.t()} | {:error, any()}
   def run_chore(chore_mod, input, opts \\ []) do
-    chore = %Chore{mod: chore_mod, id: gen_id()}
+    opts = merge_default_opts(opts, chore_mod)
+    extra_data = Keyword.get(opts, :extra_data, %{})
+    chore = %Chore{mod: chore_mod, id: gen_id(), inputs: input, extra_data: extra_data}
 
     with {:ok, validated_input} <- Chore.validate_input(chore, input),
          {:ok, updated_chore = %Chore{reporter: pid}} when not is_nil(pid) <-
@@ -104,6 +109,16 @@ defmodule ChoreRunner do
          {:ok, started_chore} <- do_start_chore(updated_chore, validated_input, opts) do
       {:ok, started_chore}
     end
+  end
+
+  defp merge_default_opts(opts, chore_mod) do
+    Keyword.put_new_lazy(opts, :result_handler, fn ->
+      if function_exported?(chore_mod, :result_handler, 1) do
+        &chore_mod.result_handler/1
+      else
+        & &1
+      end
+    end)
   end
 
   @doc """

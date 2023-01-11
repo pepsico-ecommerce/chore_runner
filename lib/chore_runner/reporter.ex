@@ -7,6 +7,7 @@ defmodule ChoreRunner.Reporter do
   def __process_dict_key__, do: @process_dict_key
 
   def init({opts, chore}) do
+    emit_telemetry(:init, %{chore: chore, opts: opts})
     pubsub = Keyword.get(opts, :pubsub)
     finished_function = Keyword.get(opts, :result_handler, & &1)
 
@@ -36,8 +37,8 @@ defmodule ChoreRunner.Reporter do
   defp report_started,
     do: GenServer.cast(get_reporter_pid(), {:chore_started, DateTime.utc_now()})
 
-  defp report_finished,
-    do: GenServer.cast(get_reporter_pid(), {:chore_finished, DateTime.utc_now()})
+  defp report_finished(result),
+    do: GenServer.cast(get_reporter_pid(), {:chore_finished, DateTime.utc_now(), result})
 
   def report_failed(reason),
     do: GenServer.cast(get_reporter_pid(), {:chore_failed, reason, DateTime.utc_now()})
@@ -77,8 +78,8 @@ defmodule ChoreRunner.Reporter do
 
         if try_lock(lock_arg) do
           report_started()
-          chore_mod.run(input)
-          report_finished()
+          result = chore_mod.run(input)
+          report_finished(result)
         else
           report_failed("Failed to acquire lock")
         end
@@ -109,19 +110,23 @@ defmodule ChoreRunner.Reporter do
       _ ->
         {:reply, :error, state}
     end
+    |> tap(fn {_, status, state} ->
+      emit_telemetry(:stop_chore, %{status: status, state: state})
+    end)
   end
 
   def handle_cast({:chore_started, timestamp}, state) do
     new_state = put_in(state.chore.started_at, timestamp)
+    emit_telemetry(:start_chore, %{state: new_state})
     broadcast(new_state.pubsub, new_state.chore, :chore_started)
     {:noreply, new_state}
   end
 
-  def handle_cast({:chore_finished, timestamp}, state) do
-    new_state = put_in(state.chore.finished_at, timestamp)
+  def handle_cast({:chore_finished, timestamp, result}, state) do
+    new_state = %{state | chore: %{state.chore | finished_at: timestamp, result: result}}
+    emit_telemetry(:chore_finished, %{chore: %{state.chore | result: nil}})
     broadcast(new_state.pubsub, new_state.chore, :chore_finished)
-    state.finished_function.(state.chore)
-
+    state.finished_function.(new_state.chore)
     {:noreply, new_state}
   end
 
@@ -131,11 +136,17 @@ defmodule ChoreRunner.Reporter do
   end
 
   def handle_cast({:log, message, timestamp}, state) do
-    {:noreply, %{state | chore: put_log(state.chore, message, timestamp)}}
+    %{state | chore: put_log(state.chore, message, timestamp)}
+    |> tap(&emit_telemetry(:log, %{state: &1}))
+    |> then(&{:noreply, &1})
   end
 
-  def handle_cast({:update_counter, name, value, operation}, state) when is_number(value),
-    do: {:noreply, update_in(state.chore.values[name], &do_update_values(&1, value, operation))}
+  def handle_cast({:update_counter, name, value, operation}, state) when is_number(value) do
+    state.chore.values[name]
+    |> update_in(&do_update_values(&1, value, operation))
+    |> tap(&emit_telemetry(:update_counter, %{state: &1}))
+    |> then(&{:noreply, &1})
+  end
 
   defp fail_chore(state, reason, timestamp) do
     new_state = put_in(state.chore.finished_at, timestamp)
@@ -145,6 +156,7 @@ defmodule ChoreRunner.Reporter do
       | chore: put_log(new_state.chore, "Failed with reason: #{reason}", timestamp)
     }
 
+    emit_telemetry(:chore_failed, %{state: new_state, error_reason: reason})
     broadcast(new_state.pubsub, new_state.chore, :chore_failed)
     new_state
   end
@@ -237,5 +249,24 @@ defmodule ChoreRunner.Reporter do
       ChoreRunner.chore_pubsub_topic(chore),
       {key, chore}
     )
+  end
+
+  events = [
+    :chore_failed,
+    :chore_finished,
+    :init,
+    :log,
+    :start_chore,
+    :stop_chore,
+    :update_counter
+  ]
+
+  defp emit_telemetry(event, meta, measurements \\ %{})
+
+  for event <- events do
+    defp emit_telemetry(unquote(event), meta, measurements) do
+      [:chore_runner, :reporter, unquote(event)]
+      |> :telemetry.execute(measurements, meta)
+    end
   end
 end

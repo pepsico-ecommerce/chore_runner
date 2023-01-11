@@ -5,29 +5,33 @@ defmodule ChoreRunner.Chore do
   require ChoreRunner.DSL
   alias ChoreRunner.{DSL, Input}
 
-  defstruct id: nil,
-            mod: nil,
-            logs: [],
-            values: %{},
-            task: nil,
-            reporter: nil,
-            started_at: nil,
+  defstruct extra_data: %{},
             finished_at: nil,
-            result: nil
+            id: nil,
+            inputs: %{},
+            logs: [],
+            mod: nil,
+            reporter: nil,
+            result: nil,
+            started_at: nil,
+            task: nil,
+            values: %{}
 
-  defmacro __using__(_args), do: DSL.using()
+  defmacro __using__(opts), do: DSL.using(opts)
 
   @type unix_timestamp :: integer()
   @type t :: %__MODULE__{
-          id: String.t(),
-          mod: module(),
-          logs: [{unix_timestamp, String.t()}],
-          values: %{atom() => number()},
-          task: Task.t(),
-          reporter: pid(),
-          started_at: DateTime.t(),
+          extra_data: map(),
           finished_at: DateTime.t(),
-          result: any()
+          id: String.t(),
+          inputs: map(),
+          logs: [{unix_timestamp, String.t()}],
+          mod: module(),
+          reporter: pid(),
+          result: any(),
+          started_at: DateTime.t(),
+          task: Task.t(),
+          values: %{atom() => number()}
         }
 
   @doc """
@@ -86,6 +90,12 @@ defmodule ChoreRunner.Chore do
   The return value of the `run/1` callback will be stored in the chore struct and forwarded to the final chore handling function.
   """
   @callback run(map()) :: {:ok, any()} | {:error, any()}
+
+  @doc """
+  Optional callback to be called once the chore has been completed.
+  """
+  @callback result_handler(t()) :: any()
+  @optional_callbacks result_handler: 1
 
   def validate_input(%__MODULE__{mod: mod}, input) do
     expected_inputs = mod.inputs

@@ -1,4 +1,6 @@
 defmodule ChoreRunner.MixProject do
+  @moduledoc false
+
   use Mix.Project
 
   def project do
@@ -28,9 +30,10 @@ defmodule ChoreRunner.MixProject do
 
   defp deps do
     [
-      {:phoenix_live_view, "~> 0.17.5"},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:floki, ">= 0.30.0", only: :test},
-      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
+      {:phoenix_live_view, "~> 0.17.5"},
+      {:telemetry, "~> 1.1"}
     ]
   end
 

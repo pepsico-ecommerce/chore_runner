@@ -14,7 +14,10 @@ defmodule ChoreTest do
 
   describe "run_chore/3" do
     test "Runs a chore with valid inputs" do
-      assert {:ok, _result} =
+      ref = make_ref()
+      pid = self()
+
+      assert {:ok, _chore} =
                ChoreRunner.run_chore(
                  TestChore,
                  %{
@@ -23,8 +26,37 @@ defmodule ChoreTest do
                    my_file: "test/support/test_file.txt",
                    sleep_length: 0,
                    sleep?: false
-                 }
+                 },
+                 result_handler: fn chore ->
+                   send(pid, {ref, chore})
+                 end,
+                 extra_data: %{foo: :bar}
                )
+
+      assert_receive {^ref, chore}
+
+      assert %{
+               extra_data: %{foo: :bar},
+               inputs: %{
+                 my_file: "test/support/test_file.txt",
+                 my_float: 4.2,
+                 my_string: "string",
+                 sleep?: false,
+                 sleep_length: 0
+               },
+               logs: [],
+               mod: ChoreRunner.TestChore,
+               result:
+                 {:ok,
+                  %{
+                    my_file: "test/support/test_file.txt",
+                    my_file_value: "I am a test file",
+                    my_float: 4.2,
+                    my_string: "string",
+                    sleep?: false,
+                    sleep_length: 0
+                  }}
+             } = chore
     end
 
     test "Rejects a chore with invalid inputs" do
