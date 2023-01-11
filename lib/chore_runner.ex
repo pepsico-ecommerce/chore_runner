@@ -92,9 +92,8 @@ defmodule ChoreRunner do
   If all validations pass, the chore will then be run.
 
   Opts
-    * extra_data: Map of any additional data to be stored with the chore. This is useful
-      for things such as storing the admin on the chore which can be used in telemetry
-      events.
+    * extra_data: Map of arbitrary data to be forwarded to telemetry events and result handlers.
+      Useful for storing chore session information, such as identifying who or what ran the chore.
     * result_handler: Single arity anonymous function or MFA of a single arity function
       that is called once the chore is finished. The function will take the %Chore{}.
   """
