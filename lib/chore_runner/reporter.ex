@@ -25,6 +25,8 @@ defmodule ChoreRunner.Reporter do
      }}
   end
 
+  # def start_link(init_opts, opts \\ [])
+
   def start_link(init_opts, opts) do
     merged_opts = Keyword.merge(init_opts, opts)
     chore = Keyword.fetch!(merged_opts, :chore)

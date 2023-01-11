@@ -1,11 +1,15 @@
 defmodule ChoreRunner.TestChore do
   use ChoreRunner.Chore
 
-  input :my_string, :string
-  input :my_float, :float
-  input :my_file, :file
-  input :sleep_length, :int
-  input :sleep?, :bool
+  def inputs do
+    [
+      string(:my_string),
+      float(:my_float),
+      file(:my_file),
+      int(:sleep_length),
+      bool(:sleep?)
+    ]
+  end
 
   def run(
         %{
