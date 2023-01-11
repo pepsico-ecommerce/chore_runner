@@ -5,6 +5,7 @@ An Elixir library for writing and running code chores.
 - [Installation](#installation)
 - [Writing a Chore](#writing-a-chore)
 - [Chore Reporting](#chore-reporting)
+- [Telemetry](#telemetry)
 - [Contribution](#contribution)
 ## Motivation
 ### What is a "Chore"?
