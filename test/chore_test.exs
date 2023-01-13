@@ -44,7 +44,7 @@ defmodule ChoreTest do
                  sleep?: false,
                  sleep_length: 0
                },
-               logs: [],
+               logs: [_, _],
                mod: ChoreRunner.TestChore,
                result:
                  {:ok,

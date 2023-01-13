@@ -21,6 +21,17 @@ defmodule ChoreRunner.TestChore do
         } = attrs
       ) do
     if sleep?, do: Process.sleep(sleep_length)
+    reporter = get_reporter()
+    log("test")
+    set_counter(:test, 5)
+    inc_counter(:test, 1)
+
+    spawn(fn ->
+      log(reporter, "test from process")
+      set_counter(reporter, :process_test, 10)
+      inc_counter(reporter, :process_test, 2)
+    end)
+
     {:ok, Map.put(attrs, :my_file_value, File.read!(my_file))}
   end
 end

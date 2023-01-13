@@ -40,21 +40,27 @@ defmodule ChoreRunner.Reporter do
   defp report_finished(result),
     do: GenServer.cast(get_reporter_pid(), {:chore_finished, DateTime.utc_now(), result})
 
-  def report_failed(reason),
-    do: GenServer.cast(get_reporter_pid(), {:chore_failed, reason, DateTime.utc_now()})
+  def report_failed(reporter \\ nil, reason),
+    do:
+      GenServer.cast(reporter || get_reporter_pid(), {:chore_failed, reason, DateTime.utc_now()})
 
-  def log(message),
-    do: GenServer.cast(get_reporter_pid(), {:log, message, DateTime.utc_now()})
+  def log(reporter \\ nil, message),
+    do: GenServer.cast(reporter || get_reporter_pid(), {:log, message, DateTime.utc_now()})
 
-  def set_counter(name, value), do: do_update_counter(name, value, :set)
-  def inc_counter(name, amount), do: do_update_counter(name, amount, :inc)
+  def set_counter(reporter \\ nil, name, value),
+    do: do_update_counter(reporter, name, value, :set)
 
-  defp do_update_counter(name, value, operation),
-    do: GenServer.cast(get_reporter_pid(), {:update_counter, name, value, operation})
+  def inc_counter(reporter \\ nil, name, amount),
+    do: do_update_counter(reporter, name, amount, :inc)
+
+  defp do_update_counter(reporter, name, value, operation),
+    do: GenServer.cast(reporter || get_reporter_pid(), {:update_counter, name, value, operation})
 
   def get_chore_state(%Chore{} = chore) do
     GenServer.call(name(chore), :chore_state)
   end
+
+  def get_reporter, do: get_reporter_pid()
 
   def handle_call(:chore_state, _from, %{chore: chore} = state), do: {:reply, chore, state}
 

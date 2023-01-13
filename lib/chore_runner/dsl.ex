@@ -33,9 +33,14 @@ defmodule ChoreRunner.DSL do
       import ChoreRunner.Reporter,
         only: [
           report_failed: 1,
+          report_failed: 2,
           log: 1,
+          log: 2,
           set_counter: 2,
-          inc_counter: 2
+          set_counter: 3,
+          inc_counter: 2,
+          inc_counter: 3,
+          get_reporter: 0
         ]
 
       import ChoreRunner.Input,
