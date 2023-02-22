@@ -10,4 +10,10 @@ defmodule ChoreRunnerUI.ChoreView do
   end
 
   defp first_log(_), do: ""
+
+  defp download_link(download_plug_path, download),
+    do:
+      ChoreRunner.Downloads.StorageService.file_url(download,
+        download_plug_path: download_plug_path
+      )
 end

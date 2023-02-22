@@ -7,3 +7,17 @@ button {
   padding: 6px 15px 6px 15px;
   font-family: $font-primary;
 }
+
+.file-button {
+  background: #023e73;
+  color: white;
+  border-radius: 4px;
+  padding: 6px 15px 6px 15px;
+  font-family: $font-primary;
+  cursor:pointer;
+}
+
+.file-button-delete{
+  background:#730202;
+  margin-left: 2em;
+}

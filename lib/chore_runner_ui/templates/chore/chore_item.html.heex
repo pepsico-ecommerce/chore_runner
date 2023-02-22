@@ -1,0 +1,40 @@
+<div class="chore-item" phx-click="select_chore" phx-value-chore={@chore.id}>
+  <div class="chore-item-name">
+    <span><%= @chore.mod %></span>
+    <%= if @chore.finished_at do %>
+    <button class="chore-item-stop-button" phx-click="dismiss_chore" phx-value-id={@chore.id}>
+      Dismiss
+    </button>
+    <% else %>
+    <button class="chore-item-stop-button" phx-click="stop_chore" phx-value-id={@chore.id}>
+      Stop
+    </button>
+    <% end %>
+  </div>
+  <div class="chore-item-content-container">
+    <div class="chore-item-recentlog">
+      <%= first_log(@chore.logs) %>
+      <div>Additional logs hidden -- Click to view!</div>
+    </div>
+    <div class="chore-item-stats">
+      <%= for {key, val} <- @chore.values do %>
+      <div class="chore-item-stats-scalar">
+        <span><%= key %></span>
+        <span><%= val %></span>
+      </div>
+      <% end %>
+    </div>
+  </div>
+  <div class="chore-downloads">
+    <%= case List.first(@chore.downloads) do %>
+      <% nil -> %>
+      <% download -> %>
+      <a href={download_link(@download_plug_path, download)} download>
+      <%= download.name %>
+      </a>
+      <%= if(length(@chore.downloads) > 1) do %>
+        <a href={@download_live_path}> see more </a>
+      <% end %>
+    <% end %>
+  </div>
+</div>

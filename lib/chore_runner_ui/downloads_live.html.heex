@@ -1,0 +1,27 @@
+<div class="running-chores-container">
+  <ul class="running-chores">
+    <div class="flex-row-between">
+    <h1 class="downloads-header">File Downloads</h1>
+    <a href={@chore_live_path} class="link-button file-button">
+      Back to chores
+    </a>
+    </div>
+    <%= for download <- @downloads do %>
+    <li class="running-chore" id={download.id}>
+      <div class="chore-item">
+        <div class="download-name">
+          <span><%= download.name %></span>
+          <div>
+          <a class="link-button file-button" href={download_link(@download_plug_path, download)} download>
+            Download
+          </a>
+          <a class="link-button file-button file-button-delete" href="#" phx-click="delete" phx-value-id={download.id}>
+            Delete
+          </a>
+          </div>
+        </div>
+      </div>
+    </li>
+    <% end %>
+  </ul>
+</div>

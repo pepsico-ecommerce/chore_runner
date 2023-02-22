@@ -15,7 +15,8 @@ defmodule ChoreRunner.Chore do
             result: nil,
             started_at: nil,
             task: nil,
-            values: %{}
+            values: %{},
+            downloads: []
 
   defmacro __using__(opts), do: DSL.using(opts)
 
@@ -31,7 +32,8 @@ defmodule ChoreRunner.Chore do
           result: any(),
           started_at: DateTime.t(),
           task: Task.t(),
-          values: %{atom() => number()}
+          values: %{atom() => number()},
+          downloads: [ChoreRunner.Downloads.StorageService.file()]
         }
 
   @doc """

@@ -68,3 +68,16 @@
     font-size: 28px;
   }
 }
+
+.chore-downloads {
+  padding: 2px;
+  padding-left: 1em;
+  padding-right: 1em;
+  background-color: $pepdirect-gray6;
+  border-top: 1px black;
+}
+.chore-downloads a {
+  text-decoration: underline;
+  cursor:pointer;
+  margin-right: 1em;
+}

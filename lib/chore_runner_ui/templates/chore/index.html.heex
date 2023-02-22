@@ -1,6 +1,6 @@
 <div class="chore-menu">
   <h2 class="my-chores-heading">My Chores</h2>
-  <%= f = form_for :run_chore, "#", [phx_submit: :run_chore, phx_change: :form_changed] %>
+  <.form let={f} for={:run_chore} phx-submit="run_chore" phx-change="form_changed">
     <div class="chore-form-flexbox">
       <%= select f, :chore, @form_chores, prompt: [key: "Choose your chore"], selected: @chore_name, class: "chore-form-select", promt: "Select a Chore" %>
       <%= if @currently_selected_chore do %>
@@ -16,13 +16,13 @@
         </div>
       <% end %>
     </div>
-  </form>
+  </.form>
 </div>
 <div class="running-chores-container">
   <ul class="running-chores">
     <%= for chore <- @running_chores do %>
-    <li class="running-chore" id="<%= chore.id %>">
-      <%= live_component(ChoreItemComponent, chore: chore) %>
+    <li class="running-chore" id={chore.id}>
+      <%= live_component(ChoreItemComponent, chore: chore, download_live_path: @download_live_path, download_plug_path: @download_plug_path) %>
     </li>
     <% end %>
   </ul>

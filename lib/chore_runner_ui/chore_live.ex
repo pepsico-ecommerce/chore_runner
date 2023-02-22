@@ -72,6 +72,8 @@ defmodule ChoreRunnerUI.ChoreLive do
       socket =
         socket
         |> assign(
+          download_plug_path: Map.get(params, :download_plug_path, "/chores/download"),
+          download_live_path: Map.get(params, :download_live_path, "/chores/downloads"),
           currently_selected_chore: selected_chore,
           chore_name: chore_name,
           chore_errors: %{},
