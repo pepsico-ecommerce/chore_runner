@@ -31,9 +31,6 @@ defmodule ChoreRunner.Downloads.StorageService do
 
   def save_file(name, opts) do
     cond do
-      is_nil(Path.extname(name)) ->
-        raise "The filename—#{inspect(name)}—provided to the function ChoreRunner.Downloads.StorageService.save_file/2 does not have a file extension."
-
       opts[:path] && opts[:body] ->
         raise "Only one of the options :path or :body can be provided to the function ChoreRunner.Downloads.StorageService.save_file/2 at a time."
 
