@@ -17,7 +17,7 @@ defmodule ChoreRunnerUI do
   def live do
     quote do
       use Phoenix.LiveView,
-        layout: {ChoreRunnerUI.ChoreView, "live.html"}
+        layout: {ChoreRunnerUI.ChoreView, :live}
 
       unquote(view_helpers())
     end
@@ -36,6 +36,7 @@ defmodule ChoreRunnerUI do
       use Phoenix.HTML
 
       import Phoenix.LiveView.Helpers
+      import Phoenix.Component
 
       import Phoenix.View
     end
