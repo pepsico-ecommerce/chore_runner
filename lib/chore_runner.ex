@@ -81,6 +81,11 @@ defmodule ChoreRunner do
   end
 
   @doc """
+  Returns the pubsub topic used for file downloads
+  """
+  def downloads_pubsub_topic, do: "chore_runner_downloads:*"
+
+  @doc """
   Runs the given chore module as a chore.
   Accepts an input map with either string or atom keys as well as a keyword list of options.
   Returns a `%ChoreRunner.Chore{}` struct.
@@ -130,10 +135,11 @@ defmodule ChoreRunner do
     GenServer.call(pid, :stop_chore)
   end
 
-  defp gen_id do
-    16
+  @doc false
+  def gen_id do
+    32
     |> :crypto.strong_rand_bytes()
-    |> Base.encode16()
+    |> Base.hex_encode32(case: :lower, padding: false)
   end
 
   defp do_start_reporter(%Chore{} = chore, opts) do

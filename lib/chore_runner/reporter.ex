@@ -3,8 +3,10 @@ defmodule ChoreRunner.Reporter do
   require Logger
   alias ChoreRunner.{Chore, ChoreSupervisor}
 
-  @process_dict_key :chore_reporter_pid
-  def __process_dict_key__, do: @process_dict_key
+  @reporter_pid_dict_key :chore_reporter_pid
+  @pubsub_dict_key :chore_pubsub
+  @chore_id_dict_key :chore_id
+  def __process_dict_key__, do: @reporter_pid_dict_key
 
   def init({opts, chore}) do
     emit_telemetry(:init, %{chore: chore, opts: opts})
@@ -47,6 +49,9 @@ defmodule ChoreRunner.Reporter do
   def log(reporter \\ nil, message),
     do: GenServer.cast(reporter || get_reporter_pid(), {:log, message, DateTime.utc_now()})
 
+  def register_download(reporter \\ nil, download),
+    do: GenServer.cast(reporter || get_reporter_pid(), {:register_download, download})
+
   def set_counter(reporter \\ nil, name, value),
     do: do_update_counter(reporter, name, value, :set)
 
@@ -67,13 +72,13 @@ defmodule ChoreRunner.Reporter do
   def handle_call(
         {:start_chore_task, input, _opts},
         _from,
-        %{chore: %Chore{mod: chore_mod, task: nil} = chore} = state
+        %{chore: %Chore{id: id, mod: chore_mod, task: nil} = chore} = state
       ) do
     reporter_pid = self()
 
     task =
       Task.Supervisor.async_nolink(ChoreSupervisor, fn ->
-        put_reporter_pid_in_process(reporter_pid)
+        set_up_process_dict(id, reporter_pid, state.pubsub)
 
         lock_arg =
           case chore_mod.restriction do
@@ -147,6 +152,13 @@ defmodule ChoreRunner.Reporter do
     |> then(&{:noreply, &1})
   end
 
+  def handle_cast({:register_download, download}, state) do
+    state.chore.downloads
+    |> put_in([download | state.chore.downloads])
+    |> tap(&emit_telemetry(:register_download, %{state: &1}))
+    |> then(&{:noreply, &1})
+  end
+
   def handle_cast({:update_counter, name, value, operation}, state) when is_number(value) do
     state.chore.values[name]
     |> update_in(&do_update_values(&1, value, operation))
@@ -211,15 +223,19 @@ defmodule ChoreRunner.Reporter do
   defp put_log(%Chore{logs: logs} = chore, log, timestamp),
     do: %Chore{chore | logs: logs ++ [{log, timestamp}]}
 
-  defp put_reporter_pid_in_process(reporter_pid), do: Process.put(@process_dict_key, reporter_pid)
+  defp set_up_process_dict(chore_id, reporter_pid, pubsub) do
+    Process.put(@chore_id_dict_key, chore_id)
+    Process.put(@reporter_pid_dict_key, reporter_pid)
+    Process.put(@pubsub_dict_key, pubsub)
+  end
 
   defp get_reporter_pid do
-    case Process.get(@process_dict_key) do
+    case Process.get(@reporter_pid_dict_key) do
       nil ->
         :"$callers"
         |> Process.get()
         |> Enum.find(fn pid ->
-          Process.info(pid, :dictionary)[@process_dict_key]
+          Process.info(pid, :dictionary)[@reporter_pid_dict_key]
         end)
         |> case do
           nil -> raise "Attempted to call a chore reporting function outside of a chore"
@@ -262,6 +278,7 @@ defmodule ChoreRunner.Reporter do
     :chore_finished,
     :init,
     :log,
+    :register_download,
     :start_chore,
     :stop_chore,
     :update_counter

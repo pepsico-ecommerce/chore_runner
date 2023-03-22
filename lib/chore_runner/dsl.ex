@@ -57,6 +57,32 @@ defmodule ChoreRunner.DSL do
           bool: 1
         ]
 
+      def create_download(filename, opts) do
+        opts = Keyword.put_new_lazy(opts, :chore_id, fn -> Process.get(:chore_id) end)
+
+        filename
+        |> ChoreRunner.Downloads.create_download(opts)
+        |> tap(fn
+          {:ok, download} ->
+            ChoreRunner.Reporter.register_download(download)
+
+            case Process.get(:chore_pubsub) do
+              nil ->
+                :noop
+
+              pubsub ->
+                Phoenix.PubSub.broadcast(
+                  pubsub,
+                  ChoreRunner.downloads_pubsub_topic(),
+                  :downloads_updated
+                )
+            end
+
+          _ ->
+            :noop
+        end)
+      end
+
       def restriction, do: :self
       def inputs, do: []
 

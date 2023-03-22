@@ -53,6 +53,8 @@ scope "/" do
 
   live_session :chores, session: @chore_session do
     live "/chores", ChoreRunnerUI.ChoreLive, :index
+    # Optional, use if you want to use the downloads feature
+    live "/chores/downloads", ChoreRunnerUI.DownloadsLive, :index
   end
 end
 ```
@@ -152,6 +154,29 @@ The meat of your chore will reside in the `run/1` callback. When you run a chore
 
 These functions work in both the main chore process, and certain spawned processes such as via `Task.async_stream` for parellelization. Attempting to call these functions outside of those conditions will result in an exception.
 
+## File Downloads
+`use ChoreRunner.Chore` also imports the function `create_download(filename, opts)`.
+This allows your chores to save files which can be downloaded right after they are created, either via a link on the chore progress element on `ChoreLive` liveview page, or from the dedicated `DownloadsLive` liveview page.
+
+To use, simply provide a filename and either a path to a file, or a file body. Filenames do not need to be unique, and chores know which files they created automatically (Though a file does not know its parent chore).
+```elixir
+# Local file path
+create_download("mytextfile.txt", path: "path/to/file.txt")
+
+# Binary body
+create_download("mytextfile.txt", body: "this is my text file!")
+```
+
+The download is saved and loaded using the configured `storage service`.
+
+The default `storage service` is `ChoreRunner.Downloads.TemporaryDiskStorageService`,
+an ephemeral local disk solution that is multi-node compatible out of the box!
+
+You may implement your own solution—for example, uploading files to a cloud platform—by implementing the callbacks specified in the `ChoreRunner.Downloads.StorageService` behaviour.
+You can then configure the global `storage_service` in your application config.
+
+`config :chore_runner, :storage_service, MyStorageService`
+
 ## Telemetry
 The following telemetry events are sent from the `ChoreRunner.Reporter`
 - `[:chore_runner, :reporter, :chore_failed]`
@@ -159,7 +184,7 @@ The following telemetry events are sent from the `ChoreRunner.Reporter`
   - Sends `%{state: chore_state, error_reason: reason}`.
 - `[:chore_runner, :reporter, :chore_finished]`
   - Emitted when chore has finished.
-  - Sends `%Chore{result: nil}` where the result is set to nil to avoid sending large results through telemetry. 
+  - Sends `%Chore{result: nil}` where the result is set to nil to avoid sending large results through telemetry.
 - `[:chore_runner, :reporter, :init]`
   - Emitted when the reporter is started.
   - Sends `%{chore: chore, opts: init_opts}`.

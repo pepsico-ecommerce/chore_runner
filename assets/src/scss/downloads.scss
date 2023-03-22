@@ -1,0 +1,27 @@
+.downloads-header{
+  font-size: 2em;
+  font-weight: bolder;
+}
+
+.flex-row-between{
+  margin-left: 1em;
+  margin-right: 1em;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.download-name {
+  background-color: $pepdirect-gray6;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  & span {
+    font-family: $font-primary;
+    font-weight: 400;
+    color: $pepdirect-gray1;
+  }
+}
