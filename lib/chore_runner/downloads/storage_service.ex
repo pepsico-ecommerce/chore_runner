@@ -15,7 +15,8 @@ defmodule ChoreRunner.Downloads.StorageService do
           required(:name) => String.t(),
           required(:type) => String.t(),
           required(:created_at) => DateTime.t(),
-          chore_id: String.t()
+          optional(:chore_id) => String.t(),
+          optional(atom()) => any()
         }
   @callback save_file(name, opts) :: {:ok, file()} | {:error, reason()}
   @callback list_files() :: {:ok, [file()]} | {:error, reason()}
