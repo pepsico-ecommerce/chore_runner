@@ -3,7 +3,7 @@ defmodule ChoreRunnerUI.DownloadsPlug do
   alias ChoreRunner.Downloads.StorageService
   @buffer_size 1024
 
-  def init(_), do: %{}
+  def init(opts), do: opts
 
   def call(%{path_info: [id]} = conn, _) do
     current_node = node()
