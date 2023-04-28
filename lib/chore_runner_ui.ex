@@ -10,6 +10,7 @@ defmodule ChoreRunnerUI do
       import Phoenix.Controller,
         only: [get_flash: 1, get_flash: 2, view_module: 1, view_template: 1]
 
+      import Phoenix.Component
       unquote(view_helpers())
     end
   end
@@ -17,7 +18,7 @@ defmodule ChoreRunnerUI do
   def live do
     quote do
       use Phoenix.LiveView,
-        layout: {ChoreRunnerUI.ChoreView, "live.html"}
+        layout: {ChoreRunnerUI.ChoreView, :live}
 
       unquote(view_helpers())
     end
