@@ -1,6 +1,6 @@
 <div class="chore-menu">
   <h2 class="my-chores-heading">My Chores</h2>
-  <.form :let={f} for={:run_chore} phx-submit="run_chore" phx-change="form_changed">
+  <.form :let={f} for={%{}} as={:run_chore} phx-submit="run_chore" phx-change="form_changed">
     <div class="chore-form-flexbox">
       <%= select f, :chore, @form_chores, prompt: [key: "Choose your chore"], selected: @chore_name, class: "chore-form-select", promt: "Select a Chore" %>
       <%= if @currently_selected_chore do %>

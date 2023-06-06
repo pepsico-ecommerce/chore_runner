@@ -24,7 +24,7 @@ defmodule ChoreRunner.Downloads.StorageService do
   @callback file_url(file(), list()) :: String.t()
   # @callback extra_ui_info() :: map()
 
-  @storage_service Application.get_env(
+  @storage_service Application.compile_env(
                      :chore_runner,
                      :storage_service,
                      ChoreRunner.Downloads.TemporaryDiskStorageService
