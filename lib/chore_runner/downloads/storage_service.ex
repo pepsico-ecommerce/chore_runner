@@ -53,7 +53,7 @@ defmodule ChoreRunner.Downloads.StorageService do
   def find_files_by_chore_id(chore_id), do: find_files_by(:chore_id, chore_id)
 
   defp find_files_by(key, val) do
-    with {:ok, files} <- list_files() do
+    with {:ok, files} <- ChoreRunner.Downloads.list_downloads() do
       Enum.filter(files, &(&1[key] == val))
     end
   end
