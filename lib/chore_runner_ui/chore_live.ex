@@ -56,7 +56,8 @@ defmodule ChoreRunnerUI.ChoreLive do
         session: session,
         inputs: [],
         file_inputs: [],
-        selected_chore: nil
+        selected_chore: nil,
+        filter_string: ""
       )
       |> set_inputs(nil)
 
@@ -101,6 +102,24 @@ defmodule ChoreRunnerUI.ChoreLive do
   @impl true
   def render(assigns) do
     ChoreView.render("index.html", assigns)
+  end
+
+  def handle_event(
+        "filter_form_changed",
+        %{"filter_chores" => %{"filter_string" => filter_string}},
+        %{
+          assigns: %{chores: chores}
+        } = socket
+      ) do
+    filter_string = String.downcase(filter_string)
+
+    form_chores =
+      chores
+      |> Map.keys()
+      |> Enum.sort()
+      |> Enum.filter(&(&1 |> String.downcase() |> String.contains?(filter_string)))
+
+    {:noreply, assign(socket, form_chores: form_chores, filter_string: filter_string)}
   end
 
   def handle_event(

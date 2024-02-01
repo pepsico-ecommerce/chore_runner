@@ -1,5 +1,10 @@
 <div class="chore-menu">
   <h2 class="my-chores-heading">My Chores</h2>
+  <.form :let={f} for={%{}} as={:filter_chores} phx-change="filter_form_changed">
+    <div class="chore-form-flexbox">
+      <%= text_input f, :filter_string, value: @filter_string, class: "chore-form-select", placeholder: "Filter chores" %>
+    </div>
+  </.form>
   <.form :let={f} for={%{}} as={:run_chore} phx-submit="run_chore" phx-change="form_changed">
     <div class="chore-form-flexbox">
       <%= select f, :chore, @form_chores, prompt: [key: "Choose your chore"], selected: @chore_name, class: "chore-form-select", promt: "Select a Chore" %>
