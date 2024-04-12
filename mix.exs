@@ -6,7 +6,7 @@ defmodule ChoreRunner.MixProject do
   def project do
     [
       app: :chore_runner,
-      version: "0.4.3",
+      version: "0.5.0",
       elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -32,8 +32,9 @@ defmodule ChoreRunner.MixProject do
     [
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:floki, ">= 0.30.0", only: :test},
-      {:phoenix_live_view, "~> 0.18.18"},
+      {:phoenix_live_view, "~> 0.18"},
       {:phoenix_view, "~> 2.0"},
+      {:phoenix_html, "~> 3.1"},
       {:telemetry, "~> 1.1"}
     ]
   end
