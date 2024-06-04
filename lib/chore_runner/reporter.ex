@@ -14,7 +14,7 @@ defmodule ChoreRunner.Reporter do
     finished_function = Keyword.get(opts, :result_handler, & &1)
 
     unless pubsub do
-      Logger.warn(":pubsub option not supplied to `ChoreRunner.Reporter`")
+      Logger.warning(":pubsub option not supplied to `ChoreRunner.Reporter`")
     end
 
     send(self(), :broadcast)
