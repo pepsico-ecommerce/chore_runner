@@ -81,7 +81,7 @@ defmodule ChoreRunner.Reporter do
         set_up_process_dict(id, reporter_pid, state.pubsub)
 
         lock_arg =
-          case chore_mod.restriction do
+          case chore_mod.restriction() do
             :none -> :none
             :self -> chore_mod
             :global -> :global

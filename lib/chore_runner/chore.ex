@@ -100,7 +100,7 @@ defmodule ChoreRunner.Chore do
   @optional_callbacks result_handler: 1
 
   def validate_input(%__MODULE__{mod: mod}, input) do
-    expected_inputs = mod.inputs
+    expected_inputs = mod.inputs()
 
     Enum.reduce(input, {%{}, []}, fn {key, val}, {validated_inputs, errors_acc} ->
       with {:ok, {type, name, opts}} <- verify_valid_input_name(expected_inputs, key),
