@@ -97,7 +97,8 @@ defmodule ChoreRunner.Chore do
   Optional callback to be called once the chore has been completed.
   """
   @callback result_handler(t()) :: any()
-  @optional_callbacks result_handler: 1
+  @callback available?(t()) :: boolean()
+  @optional_callbacks result_handler: 1, available?: 1
 
   def validate_input(%__MODULE__{mod: mod}, input) do
     expected_inputs = mod.inputs()
