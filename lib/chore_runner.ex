@@ -142,6 +142,39 @@ defmodule ChoreRunner do
     |> Base.hex_encode32(case: :lower, padding: false)
   end
 
+  @doc """
+  Provides a map of chore name, and chore module that are available to run
+  filters out non chores, and chores that are marked as unavailable.
+  """
+  @spec list_available(any()) :: %{String.t() => module()}
+  def list_available(%{"otp_app" => app, "chore_root" => root} = opts) do
+    split_root = Module.split(root) |> Enum.reverse()
+
+    {:ok, modules} = :application.get_key(app, :modules)
+
+    modules
+    |> Enum.map(fn module ->
+      module
+      |> Module.split()
+      |> Enum.reverse()
+      |> case do
+        [trimmed_module | ^split_root] ->
+          {trimmed_module, module}
+
+        _ ->
+          nil
+      end
+    end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.filter(fn {_trimmed_module, module} -> function_exported?(module, :available?, 1) end)
+    |> Enum.filter(fn {_trimmed_module, module} -> module.available?(opts) end)
+    |> Enum.into(%{})
+  end
+
+  def list_available(_) do
+    %{}
+  end
+
   defp do_start_reporter(%Chore{} = chore, opts) do
     with {:ok, pid} <-
            DynamicSupervisor.start_child(

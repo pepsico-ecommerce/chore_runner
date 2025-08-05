@@ -94,7 +94,11 @@ defmodule ChoreRunner.DSL do
         result_handler.(chore)
       end
 
-      defoverridable inputs: 0, restriction: 0, result_handler: 1
+      def available?(_opts) do
+        true
+      end
+
+      defoverridable inputs: 0, restriction: 0, result_handler: 1, available?: 1
     end
   end
 end

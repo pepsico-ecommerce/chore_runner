@@ -1,6 +1,6 @@
 defmodule ChoreTest do
   use ExUnit.Case
-  alias ChoreRunner.TestChore
+  alias ChoreRunner.{TestChore, TestChore2}
 
   setup do
     pid =
@@ -89,6 +89,30 @@ defmodule ChoreTest do
                )
 
       assert Keyword.get(errors, :my_file) == [:does_not_exist]
+    end
+  end
+
+  describe "TestChore.available?/1" do
+    test "By default are available" do
+      assert TestChore.available?(nil)
+    end
+
+    test "Can be made unavailable" do
+      refute TestChore2.available?(nil)
+    end
+  end
+
+  describe "ChoreRunner.list_available_chores/1" do
+    test "provides an empty list when sent garbage" do
+      assert %{} == ChoreRunner.list_available(nil)
+    end
+
+    test "provides the only available test module" do
+      assert %{"TestChore" => ChoreRunner.TestChore} ==
+               ChoreRunner.list_available(%{
+                 "otp_app" => :chore_runner,
+                 "chore_root" => ChoreRunner
+               })
     end
   end
 end

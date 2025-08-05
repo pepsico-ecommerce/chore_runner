@@ -270,26 +270,8 @@ defmodule ChoreRunnerUI.ChoreLive do
 
   defp subscribe_to_pubsub(_), do: :noop
 
-  defp list_chores(%{"otp_app" => app, "chore_root" => root}) do
-    split_root = Module.split(root) |> Enum.reverse()
-
-    {:ok, modules} = :application.get_key(app, :modules)
-
-    modules
-    |> Enum.map(fn module ->
-      module
-      |> Module.split()
-      |> Enum.reverse()
-      |> case do
-        [trimmed_module | ^split_root] ->
-          {trimmed_module, module}
-
-        _ ->
-          nil
-      end
-    end)
-    |> Enum.reject(&is_nil/1)
-    |> Enum.into(%{})
+  defp list_chores(opts) do
+    ChoreRunner.list_available(opts)
   end
 
   defp list_chores(_), do: %{}
