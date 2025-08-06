@@ -166,7 +166,9 @@ defmodule ChoreRunner do
       end
     end)
     |> Enum.reject(&is_nil/1)
-    |> Enum.filter(fn {_trimmed_module, module} -> function_exported?(module, :available?, 1) end)
+    |> Enum.filter(fn {_trimmed_module, module} ->
+      Code.ensure_loaded?(module) && function_exported?(module, :available?, 1)
+    end)
     |> Enum.filter(fn {_trimmed_module, module} -> module.available?(opts) end)
     |> Enum.into(%{})
   end
