@@ -1,9 +1,11 @@
 defmodule ChoreRunner.Downloads do
   alias ChoreRunner.Downloads.StorageService
 
+  @default_limit 50
+
   def create_download(filename, opts), do: StorageService.save_file(filename, opts)
 
-  def list_downloads do
+  def list_downloads(limit \\ @default_limit) do
     with {:ok, local_downloads} <- StorageService.list_files(),
          {results, _} <-
            :rpc.multicall(Node.list(), ChoreRunner.Downloads.StorageService, :list_files, []) do
@@ -13,6 +15,8 @@ defmodule ChoreRunner.Downloads do
         _ -> []
       end)
       |> Kernel.++(local_downloads)
+      |> Enum.sort_by(& &1.created_at, {:desc, NaiveDateTime})
+      |> Enum.take(limit)
     end
   end
 

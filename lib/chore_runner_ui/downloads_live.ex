@@ -91,4 +91,9 @@ defmodule ChoreRunnerUI.DownloadsLive do
       ChoreRunner.Downloads.StorageService.file_url(download,
         download_plug_path: download_plug_path
       )
+
+  defp format_timestamp(%NaiveDateTime{} = ndt),
+    do: Calendar.strftime(ndt, "%Y-%m-%d %H:%M:%S")
+
+  defp format_timestamp(_), do: ""
 end
