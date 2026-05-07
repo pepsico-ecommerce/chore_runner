@@ -10,7 +10,10 @@
     <li class="running-chore" id={download.id}>
       <div class="chore-item">
         <div class="download-name">
-          <span><%= download.name %></span>
+          <div class="download-name-text">
+            <span><%= download.name %></span>
+            <small class="download-timestamp"><%= format_timestamp(download.created_at) %></small>
+          </div>
           <div>
           <a class="link-button file-button" href={download_link(@download_plug_path, download)} download>
             Download

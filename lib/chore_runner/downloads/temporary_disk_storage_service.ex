@@ -14,7 +14,8 @@ defmodule ChoreRunner.Downloads.TemporaryDiskStorageService do
            path: build_write_filepath(id, name)
          },
          :ok <- write_file(file.path, opts[:path], opts[:body]) do
-      {:ok, Map.put(file, :created_at, File.stat!(file.path).mtime)}
+      created_at = file.path |> File.stat!() |> Map.fetch!(:mtime) |> NaiveDateTime.from_erl!()
+      {:ok, Map.put(file, :created_at, created_at)}
     end
   end
 
