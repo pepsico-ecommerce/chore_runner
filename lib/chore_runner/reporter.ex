@@ -212,7 +212,7 @@ defmodule ChoreRunner.Reporter do
   def handle_info({:DOWN, ref, _, _, _}, %{chore: %{task: %{ref: ref}}} = state),
     do: {:stop, :normal, state}
 
-  defp diff_chore(prev, current) do
+  defp diff_chore(%Chore{} = prev, %Chore{} = current) do
     %Chore{current | logs: current.logs -- prev.logs}
   end
 

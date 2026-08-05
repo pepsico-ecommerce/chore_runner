@@ -3,7 +3,8 @@ defmodule ChoreRunner.Chore do
   Behaviour and DSL for chores.
   """
   require ChoreRunner.DSL
-  alias ChoreRunner.{DSL, Input}
+  alias ChoreRunner.DSL
+  alias ChoreRunner.Input
 
   defstruct extra_data: %{},
             finished_at: nil,
@@ -52,7 +53,7 @@ defmodule ChoreRunner.Chore do
 
 
   Expects a list of input function calls.
-  The input functions provided are `string`, `int`, `float`, `file`, and `bool`.
+  The input functions provided are `string`, `int`, `float`, `file`, `bool`, and `selectbox`.
   All input functions follow the same syntax.
   For example:
   ```
@@ -65,6 +66,7 @@ defmodule ChoreRunner.Chore do
   ```
   The supported options are
   - `:description` — a string description of the input, for UI use
+  - `:default` — a value used when the caller omits this input and prefilled in the UI
   - `:validators` — a list of anonymous or captured validator functions.
     Valiator functions should accept a single argument as a parameter, but can return a variety of things, including:
     - an `{:ok, value}`, or `{:error, reason}` tuple
@@ -98,10 +100,27 @@ defmodule ChoreRunner.Chore do
   """
   @callback result_handler(t()) :: any()
   @callback available?(t()) :: boolean()
-  @optional_callbacks result_handler: 1, available?: 1
+  @callback instructions() :: String.t() | nil
+  @callback persist_inputs_in_url?() :: boolean()
+  @optional_callbacks result_handler: 1,
+                      available?: 1,
+                      instructions: 0,
+                      persist_inputs_in_url?: 0
+
+  @doc "Returns explicit chore instructions, falling back to the module documentation."
+  @spec instructions_for(module()) :: String.t() | nil
+  def instructions_for(chore) do
+    chore
+    |> explicit_instructions()
+    |> case do
+      nil -> module_doc(chore)
+      instructions -> instructions
+    end
+  end
 
   def validate_input(%__MODULE__{mod: mod}, input) do
     expected_inputs = mod.inputs()
+    input = put_default_values(input, expected_inputs)
 
     Enum.reduce(input, {%{}, []}, fn {key, val}, {validated_inputs, errors_acc} ->
       with {:ok, {type, name, opts}} <- verify_valid_input_name(expected_inputs, key),
@@ -136,7 +155,7 @@ defmodule ChoreRunner.Chore do
   end
 
   defp validate_input(name, value, type, opts) do
-    [(&Input.validate_field(type, &1)) | Keyword.get(opts, :validators, [])]
+    [(&Input.validate_field(type, &1, opts)) | Keyword.get(opts, :validators, [])]
     |> Enum.reduce({value, []}, fn validator, {val, errors} ->
       case validator.(val) do
         {:ok, validated_value} -> {validated_value, errors}
@@ -153,4 +172,48 @@ defmodule ChoreRunner.Chore do
       {_invalid, errors} -> {:error, name, errors}
     end
   end
+
+  defp put_default_values(input, expected_inputs) do
+    expected_inputs
+    |> Input.default_values()
+    |> Enum.reduce(input, fn {name, value}, acc ->
+      if Map.has_key?(acc, name) or Map.has_key?(acc, to_string(name)) do
+        acc
+      else
+        Map.put(acc, name, value)
+      end
+    end)
+  end
+
+  defp explicit_instructions(chore) do
+    if function_exported?(chore, :instructions, 0) do
+      chore.instructions()
+      |> normalize_instructions()
+    end
+  end
+
+  defp module_doc(chore) do
+    case Code.fetch_docs(chore) do
+      {:docs_v1, _annotation, _language, _format, %{} = docs, _metadata, _entries} ->
+        docs
+        |> Map.get("en", docs |> Map.values() |> List.first())
+        |> normalize_instructions()
+
+      {:docs_v1, _annotation, _language, _format, doc, _metadata, _entries}
+      when is_binary(doc) ->
+        normalize_instructions(doc)
+
+      _other ->
+        nil
+    end
+  end
+
+  defp normalize_instructions(instructions) when is_binary(instructions) do
+    case String.trim(instructions) do
+      "" -> nil
+      instructions -> instructions
+    end
+  end
+
+  defp normalize_instructions(_instructions), do: nil
 end

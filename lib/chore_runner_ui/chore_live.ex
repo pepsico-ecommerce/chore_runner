@@ -39,6 +39,7 @@ defmodule ChoreRunnerUI.ChoreLive do
   Now you can visit the speficied url and start running chores!
   """
   use ChoreRunnerUI, :live
+  alias ChoreRunnerUI.ChoreForm
   alias ChoreRunnerUI.ChoreView
   require Logger
 
@@ -56,6 +57,9 @@ defmodule ChoreRunnerUI.ChoreLive do
         session: session,
         inputs: [],
         file_inputs: [],
+        form_values: ChoreForm.form_data(nil, %{}),
+        instructions: nil,
+        persist_inputs_in_url?: false,
         selected_chore: nil,
         filter_string: ""
       )
@@ -68,8 +72,15 @@ defmodule ChoreRunnerUI.ChoreLive do
   def handle_params(params, url, %{assigns: %{chores: chores}} = socket) do
     chore_name = Map.get(params, "chore") || Map.keys(chores) |> List.first()
     selected_chore = chores[chore_name]
+    filter_string = params |> Map.get("filter", "") |> String.downcase()
+    form_chores = filter_chores(chores, filter_string)
 
     if selected_chore do
+      inputs = selected_chore.inputs()
+      persisted_values = persisted_values(selected_chore, params)
+      input_values = ChoreForm.initial_values(inputs, persisted_values)
+      errors = validate_input(selected_chore, input_values)
+
       socket =
         socket
         |> assign(
@@ -77,11 +88,15 @@ defmodule ChoreRunnerUI.ChoreLive do
           download_live_path: Map.get(params, :download_live_path, "/chores/downloads"),
           currently_selected_chore: selected_chore,
           chore_name: chore_name,
-          chore_errors: %{},
-          is_chore_valid: true,
+          filter_string: filter_string,
+          form_chores: form_chores,
+          form_values: ChoreForm.form_data(chore_name, input_values),
+          instructions: ChoreRunner.Chore.instructions_for(selected_chore),
+          persist_inputs_in_url?: persist_inputs_in_url?(selected_chore),
           uri: URI.parse(url)
         )
-        |> set_inputs(selected_chore.inputs())
+        |> assign_errors(errors)
+        |> set_inputs(inputs)
 
       {:noreply, socket}
     else
@@ -90,6 +105,11 @@ defmodule ChoreRunnerUI.ChoreLive do
         |> assign(
           currently_selected_chore: nil,
           chore_name: nil,
+          filter_string: filter_string,
+          form_chores: form_chores,
+          form_values: ChoreForm.form_data(nil, %{}),
+          instructions: nil,
+          persist_inputs_in_url?: false,
           chore_errors: %{},
           is_chore_valid: false,
           uri: URI.parse(url)
@@ -107,19 +127,15 @@ defmodule ChoreRunnerUI.ChoreLive do
   def handle_event(
         "filter_form_changed",
         %{"filter_chores" => %{"filter_string" => filter_string}},
-        %{
-          assigns: %{chores: chores}
-        } = socket
+        %{assigns: %{chores: chores, uri: uri}} = socket
       ) do
     filter_string = String.downcase(filter_string)
+    form_chores = filter_chores(chores, filter_string)
+    query_params = uri |> query_params() |> put_filter(filter_string)
 
-    form_chores =
-      chores
-      |> Map.keys()
-      |> Enum.sort()
-      |> Enum.filter(&(&1 |> String.downcase() |> String.contains?(filter_string)))
+    socket = assign(socket, form_chores: form_chores, filter_string: filter_string)
 
-    {:noreply, assign(socket, form_chores: form_chores, filter_string: filter_string)}
+    {:noreply, push_patch(socket, to: path_with_query(uri.path, query_params), replace: true)}
   end
 
   def handle_event(
@@ -134,18 +150,29 @@ defmodule ChoreRunnerUI.ChoreLive do
     if(currently_selected_chore == selected_chore) do
       chore_attrs = Map.get(attrs, "chore_attrs", %{})
 
-      errors =
-        case selected_chore.validate_input(chore_attrs) do
-          {:ok, _} -> []
-          {:error, errors} -> errors
-        end
+      socket =
+        socket
+        |> assign(:form_values, ChoreForm.form_data(chore_name, chore_attrs))
+        |> assign_errors(validate_input(selected_chore, chore_attrs))
 
-      {:noreply, assign_errors(socket, errors)}
+      if persist_inputs_in_url?(selected_chore) do
+        persisted_values = ChoreForm.persistable_values(selected_chore.inputs(), chore_attrs)
+
+        query_params =
+          %{"chore" => chore_name, "inputs" => persisted_values}
+          |> put_filter(socket.assigns.filter_string)
+
+        {:noreply, push_patch(socket, to: path_with_query(uri.path, query_params), replace: true)}
+      else
+        {:noreply, socket}
+      end
     else
       # [SRC](https://elixirforum.com/t/liveview-push-patch-append-to-params/30964/9)
-      to = uri.path <> "?" <> URI.encode_query(%{chore: chore_name})
+      query_params =
+        %{"chore" => chore_name}
+        |> put_filter(socket.assigns.filter_string)
 
-      {:noreply, push_patch(socket, to: to)}
+      {:noreply, push_patch(socket, to: path_with_query(uri.path, query_params))}
     end
   end
 
@@ -168,7 +195,8 @@ defmodule ChoreRunnerUI.ChoreLive do
       |> Enum.into(%{})
 
     chore = socket.assigns.chores[chore_name]
-    chore_attrs = Map.get(attrs, "chore_attrs", %{}) |> Map.merge(file_attrs)
+    submitted_attrs = Map.get(attrs, "chore_attrs", %{})
+    chore_attrs = Map.merge(submitted_attrs, file_attrs)
 
     extra_data = socket.assigns.session["extra_data"]
 
@@ -177,6 +205,8 @@ defmodule ChoreRunnerUI.ChoreLive do
         {:ok, _} -> []
         {:error, errors} -> errors
       end
+
+    socket = assign(socket, :form_values, ChoreForm.form_data(chore_name, submitted_attrs))
 
     {:noreply, assign_errors(socket, errors)}
   end
@@ -270,11 +300,14 @@ defmodule ChoreRunnerUI.ChoreLive do
 
   defp subscribe_to_pubsub(_), do: :noop
 
-  defp list_chores(opts) do
-    ChoreRunner.list_available(opts)
-  end
+  defp list_chores(opts), do: ChoreRunner.list_available(opts)
 
-  defp list_chores(_), do: %{}
+  defp filter_chores(chores, filter_string) do
+    chores
+    |> Map.keys()
+    |> Enum.sort()
+    |> Enum.filter(&(&1 |> String.downcase() |> String.contains?(filter_string)))
+  end
 
   defp update_running_chore(running_chores, %{id: id} = chore) do
     Enum.map(running_chores, fn
@@ -330,4 +363,34 @@ defmodule ChoreRunnerUI.ChoreLive do
   defp assign_errors(socket, errors) do
     assign(socket, chore_errors: Enum.into(errors, %{}), is_chore_valid: false)
   end
+
+  defp persisted_values(chore, params) do
+    if persist_inputs_in_url?(chore) do
+      Map.get(params, "inputs", %{})
+    else
+      %{}
+    end
+  end
+
+  defp persist_inputs_in_url?(chore) do
+    function_exported?(chore, :persist_inputs_in_url?, 0) and chore.persist_inputs_in_url?()
+  end
+
+  defp validate_input(chore, input) do
+    case chore.validate_input(input) do
+      {:ok, _validated_input} -> []
+      {:error, errors} -> errors
+    end
+  end
+
+  defp query_params(%URI{query: nil}), do: %{}
+  defp query_params(%URI{query: query}), do: Plug.Conn.Query.decode(query)
+
+  defp put_filter(query_params, ""), do: Map.delete(query_params, "filter")
+  defp put_filter(query_params, filter_string), do: Map.put(query_params, "filter", filter_string)
+
+  defp path_with_query(path, query_params) when map_size(query_params) == 0, do: path
+
+  defp path_with_query(path, query_params),
+    do: path <> "?" <> Plug.Conn.Query.encode(query_params)
 end

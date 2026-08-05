@@ -2,19 +2,29 @@
   <% :bool -> %>
     <div class="chore-form-input-wrapper chore-form-top-level-input-wrapper">
       <%= label @form, @key, class: "chore-form-label" %>
-      <%= checkbox @form, @key, class: "chore-form-input chore-form-checkbox", phx_update: "ignore" %>
+      <%= checkbox @form, @key, input_options("chore-form-input chore-form-checkbox", @persist_inputs_in_url?) %>
+      <%= render(__MODULE__, "chore_input_description.html", opts: @opts) %>
       <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
     </div>
   <% :string -> %>
     <div class="chore-form-input-wrapper chore-form-top-level-input-wrapper">
       <%= label @form, @key, class: "chore-form-label" %>
-      <%= text_input @form, @key, class: "chore-form-input chore-form-text-input", phx_update: "ignore" %>
+      <%= text_input @form, @key, input_options("chore-form-input chore-form-text-input", @persist_inputs_in_url?) %>
+      <%= render(__MODULE__, "chore_input_description.html", opts: @opts) %>
       <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
     </div>
   <% type when type in [:int, :float] -> %>
     <div class="chore-form-input-wrapper chore-form-top-level-input-wrapper">
       <%= label @form, @key, class: "chore-form-label" %>
-      <%= number_input @form, @key, class: "chore-form-input chore-form-text-input chore-form-number-input", phx_update: "ignore" %>
+      <%= number_input @form, @key, input_options("chore-form-input chore-form-text-input chore-form-number-input", @persist_inputs_in_url?) %>
+      <%= render(__MODULE__, "chore_input_description.html", opts: @opts) %>
+      <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
+    </div>
+  <% :select -> %>
+    <div class="chore-form-input-wrapper chore-form-top-level-input-wrapper">
+      <%= label @form, @key, class: "chore-form-label" %>
+      <%= select @form, @key, select_options(@opts), select_input_options(@opts, @persist_inputs_in_url?) %>
+      <%= render(__MODULE__, "chore_input_description.html", opts: @opts) %>
       <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
     </div>
   <% :file -> %>
@@ -22,11 +32,11 @@
       <div class="chore-form-input-wrapper">
         <%= label @form, @key, class: "chore-form-label" %>
         <.live_file_input upload={Map.get(@uploads, @key)} class="chore-form-input chore-form-file-input" />
+        <%= render(__MODULE__, "chore_input_description.html", opts: @opts) %>
       </div>
       <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
       <%= for entry <- Map.get(@uploads, @key).entries do %>
         <progress value={entry.progress} max="100"> <%= entry.progress %>% </progress>
-        <!--button phx-click="cancel-upload" phx-value-ref="<%#= entry.ref %>" aria-label="cancel">&times;</button-->
         <%= for error <- upload_errors(Map.get(@uploads, @key), entry) do %>
           <p class="alert alert-danger"><%= inspect(error) %></p>
         <% end %>

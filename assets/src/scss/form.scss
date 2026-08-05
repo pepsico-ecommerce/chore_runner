@@ -11,6 +11,7 @@
   border: 1px solid $border-color;
   border-radius: 4px;
   padding: 9px 15px;
+  background-color: white;
 }
 
 .chore-form-label {
@@ -71,6 +72,35 @@
 
 .chore-form-file-input {
   color: white;
+}
+
+.chore-form-description {
+  color: $pepdirect-gray2;
+  font-family: $font-primary;
+  font-size: 12px;
+  line-height: 1.35;
+  margin-top: 6px;
+}
+
+.chore-instructions {
+  border: 1px solid $border-color;
+  border-radius: 4px;
+  color: $pepdirect-gray2;
+  font-family: $font-primary;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+}
+
+.chore-instructions-summary {
+  color: $pepdirect-gray1;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.chore-instructions-content {
+  line-height: 1.45;
+  padding-top: 10px;
+  white-space: pre-wrap;
 }
 
 .chore-run-submit-button {

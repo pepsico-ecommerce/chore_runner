@@ -26,9 +26,12 @@ defmodule ChoreRunner.DSL do
   end
 
   def using(opts) do
+    persist_inputs_in_url? = Keyword.get(opts, :persist_inputs_in_url?, false)
+
     quote do
       alias ChoreRunner.Chore
       @behaviour Chore
+      @before_compile ChoreRunner.DSL
 
       import ChoreRunner.Reporter,
         only: [
@@ -50,6 +53,8 @@ defmodule ChoreRunner.DSL do
           float: 2,
           file: 2,
           bool: 2,
+          selectbox: 2,
+          selectbox: 3,
           string: 1,
           int: 1,
           float: 1,
@@ -98,7 +103,32 @@ defmodule ChoreRunner.DSL do
         true
       end
 
-      defoverridable inputs: 0, restriction: 0, result_handler: 1, available?: 1
+      def persist_inputs_in_url? do
+        unquote(persist_inputs_in_url?)
+      end
+
+      defoverridable inputs: 0,
+                     restriction: 0,
+                     result_handler: 1,
+                     available?: 1,
+                     persist_inputs_in_url?: 0
     end
   end
+
+  defmacro __before_compile__(env) do
+    module_doc = env.module |> Module.get_attribute(:moduledoc) |> normalize_module_doc()
+
+    if Module.defines?(env.module, {:instructions, 0}) do
+      quote do
+      end
+    else
+      quote do
+        def instructions, do: unquote(module_doc)
+      end
+    end
+  end
+
+  defp normalize_module_doc({_line, doc}) when is_binary(doc), do: doc
+  defp normalize_module_doc(doc) when is_binary(doc), do: doc
+  defp normalize_module_doc(_module_doc), do: nil
 end

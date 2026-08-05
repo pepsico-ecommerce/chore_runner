@@ -5,11 +5,17 @@
       <%= text_input f, :filter_string, value: @filter_string, class: "chore-form-select", placeholder: "Filter chores" %>
     </div>
   </.form>
-  <.form :let={f} for={%{}} as={:run_chore} phx-submit="run_chore" phx-change="form_changed">
+  <.form :let={f} for={@form_values} as={:run_chore} phx-submit="run_chore" phx-change="form_changed">
     <div class="chore-form-flexbox">
       <%= select f, :chore, @form_chores, prompt: [key: "Choose your chore"], selected: @chore_name, class: "chore-form-select", promt: "Select a Chore" %>
       <%= if @currently_selected_chore do %>
         <div class="chore-inputs-container">
+          <%= if @instructions do %>
+            <details class="chore-instructions">
+              <summary class="chore-instructions-summary">Instructions</summary>
+              <div class="chore-instructions-content"><%= @instructions %></div>
+            </details>
+          <% end %>
           <div class="chore-form-inputs-flexbox">
             <.inputs_for :let={ff} field={f[:chore_attrs]}>
               <%= for {type, key, opts} <- @inputs do %>
