@@ -7,14 +7,14 @@
   margin: 0;
   display: flex;
   justify-content: flex-start;
-}
 
-.chore-menu {
-  background-color: $pepdirect-gray6;
-  padding: 10px 20px;
-  min-width: 250px;
-}
+  .chore-menu {
+    background-color: $pepdirect-gray6;
+    padding: 10px 20px;
+    min-width: 250px;
+  }
 
-.running-chores-container {
-  flex: 1;
+  .running-chores-container {
+    flex: 1;
+  }
 }

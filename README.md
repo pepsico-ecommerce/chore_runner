@@ -75,15 +75,15 @@ defmodule MyApp.Chores.BasicChore do
 end
 ```
 
-Besides `run/1`, there are two other callbacks that you can implement
+Besides `run/1`, chores can implement optional callbacks for inputs, instructions, availability, concurrency restrictions, result handling, and URL persistence.
 
-### `input/0`
+### `inputs/0`
 
 ```elixir
 defmodule MyApp.Chores.BasicChore do
   use ChoreRunner.Chore
 
-  def input do
+  def inputs do
     [
       string(:my_string),
       int(:my_int),
@@ -99,18 +99,33 @@ defmodule MyApp.Chores.BasicChore do
 end
 ```
 
-The input callback lets you define expected inputs to the chore using input functions imported from ChoreRunner.Input. Input not defined in the callback will be discarded when passed to a chore through `ChoreRunner.run_chore/2`. The 5 supported input types are:
+The inputs callback lets you define expected inputs to the chore using input functions imported from ChoreRunner.Input. Input not defined in the callback will be discarded when passed to a chore through `ChoreRunner.run_chore/2`. The 6 supported input types are:
 - string
 - int
 - float
 - bool
 - file
+- selectbox
+
+Select inputs accept either Phoenix-compatible options or a zero-arity function that returns them:
+
+```elixir
+def inputs do
+  [
+    selectbox(:role, [{"Admin", :admin}, {"User", :user}], default: :user),
+    selectbox(:workspace, &workspace_options/0, prompt: "Choose a workspace")
+  ]
+end
+```
+
+Submitted select values are checked against the current options and converted back to the value type declared by the option.
 
 Input functions also accept an optional keyword list of options as a second argument. The supported keys are:
 - :description — a description of an input
+- :default — a value used when the caller omits the input and prefilled in the UI
 - :validators — a list of functions, either captured or anonymous, that can be used to transform and validate any provided input.
   ```elixir
-  def input do
+  def inputs do
     [
       string(:name, validators: [&check_length/1, & {:ok, String.capitalize(&1)}]),
     ]
@@ -125,6 +140,31 @@ Input functions also accept an optional keyword list of options as a second argu
   end
   ```
   Each input type has a default validator that are always run, which do basic type validation.
+
+### Persisting form inputs in the URL
+
+Chores can opt in to persisting all non-file inputs in the URL. This makes a configured form reloadable and shareable. Because URLs may be stored in browser history and application logs, only enable this for chores whose inputs are safe to expose.
+
+```elixir
+use ChoreRunner.Chore, persist_inputs_in_url?: true
+```
+
+Persisted values use the `inputs[...]` query namespace. File inputs are always excluded, and values are validated normally before a chore can run.
+
+The chore-name filter is always stored in the non-sensitive `filter` query parameter and restored on reload.
+
+### `instructions/0`
+
+Return a string to show in a collapsed Instructions panel above the chore inputs:
+
+```elixir
+def instructions do
+  "Run the dry-run mode first, review the output, then enable commit."
+end
+```
+
+When `instructions/0` is not defined or returns `nil`, the UI falls back to the chore module's `@moduledoc`. The panel is omitted when neither is available.
+
 ### `restriction/0`
 The restriction callback configures each chore's concurrency restriction. Concurrency restriction potentially prevents a chore from running depending on what chores are currently running. This includes chores running on other nodes. It supports 3 valid return values:
 - `def restriction, do: :none`
