@@ -60,10 +60,8 @@ defmodule ChoreRunnerUI.ChoreLiveTest do
     path = assert_patch(view)
     query = path |> URI.parse() |> Map.fetch!(:query) |> Plug.Conn.Query.decode()
 
-    assert has_element?(
-             view,
-             ~s(input[type=checkbox][name="run_chore[chore_attrs][commit?]"][checked])
-           )
+    assert %{socket: %{assigns: %{browser_managed_checkboxes?: true}}} =
+             :sys.get_state(view.pid)
 
     assert query == %{
              "chore" => "FormChore",
@@ -85,7 +83,7 @@ defmodule ChoreRunnerUI.ChoreLiveTest do
 
     assert has_element?(
              reloaded_view,
-             ~s(input[type=checkbox][name="run_chore[chore_attrs][commit?]"][checked])
+             ~s|input[type=checkbox][name="run_chore[chore_attrs][commit?]"][checked]:not([phx-update])|
            )
 
     refute has_element?(reloaded_view, ".chore-run-submit-button[disabled]")
