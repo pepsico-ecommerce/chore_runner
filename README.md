@@ -75,7 +75,7 @@ defmodule MyApp.Chores.BasicChore do
 end
 ```
 
-Besides `run/1`, chores can implement optional callbacks for inputs, instructions, availability, concurrency restrictions, result handling, and URL persistence.
+Besides `run/1`, chores can implement optional callbacks for inputs, cross-field validation, instructions, availability, concurrency restrictions, result handling, and URL persistence.
 
 ### `inputs/0`
 
@@ -140,6 +140,27 @@ Input functions also accept an optional keyword list of options as a second argu
   end
   ```
   Each input type has a default validator that are always run, which do basic type validation.
+
+### `validate_inputs/1`
+
+Use `validate_inputs/1` when a validation rule depends on more than one input. It runs only
+after defaults, type casting, and every individual field validator have succeeded, and receives
+the complete atom-keyed input map.
+
+Return `{:ok, validated_inputs}` to continue, or `{:error, keyword_errors}` to reject the input.
+Each error key must name a declared input and each value must be a non-empty list of reasons. The
+bundled UI displays these errors beside the referenced fields and disables the Run button.
+
+```elixir
+def validate_inputs(%{buyer_type: :registered, number_of_orders: count})
+    when rem(count, 2) != 0 do
+  {:error, number_of_orders: ["must be even for registered buyers"]}
+end
+
+def validate_inputs(inputs), do: {:ok, inputs}
+```
+
+Chores that do not implement this callback use a default pass-through implementation.
 
 ### Persisting form inputs in the URL
 

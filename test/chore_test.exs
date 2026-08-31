@@ -1,6 +1,24 @@
 defmodule ChoreTest do
   use ExUnit.Case
-  alias ChoreRunner.{TestChore, TestChore2}
+
+  alias ChoreRunner.TestChore
+  alias ChoreRunner.TestChore2
+
+  defmodule RejectBeforeRunChore do
+    use ChoreRunner.Chore
+
+    def inputs do
+      [
+        selectbox(:buyer_type, [{"Registered", "registered"}]),
+        int(:number_of_orders)
+      ]
+    end
+
+    def validate_inputs(_inputs),
+      do: {:error, number_of_orders: ["Registered runs require an even number of Orders."]}
+
+    def run(_inputs), do: raise("run/1 must not be invoked")
+  end
 
   setup do
     pid =
@@ -89,6 +107,16 @@ defmodule ChoreTest do
                )
 
       assert Keyword.get(errors, :my_file) == [:does_not_exist]
+    end
+
+    test "rejects cross-field errors before starting a reporter or invoking run/1" do
+      assert {:error, number_of_orders: ["Registered runs require an even number of Orders."]} =
+               ChoreRunner.run_chore(RejectBeforeRunChore, %{
+                 buyer_type: "registered",
+                 number_of_orders: 3
+               })
+
+      assert DynamicSupervisor.which_children(ChoreRunner.ReporterSupervisor) == []
     end
   end
 

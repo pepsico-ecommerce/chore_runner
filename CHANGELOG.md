@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Added optional `validate_inputs/1` cross-field validation for live forms and programmatic chore execution.
+* Preserve previously entered URL-persisted values when a form change sends only changed fields.
 * Preserve URL-persisted boolean values when LiveView rerenders chore forms.
 * Improve file input contrast and display the selected file name above its upload progress.
 

@@ -90,6 +90,7 @@ defmodule ChoreRunner.DSL do
 
       def restriction, do: :self
       def inputs, do: []
+      def validate_inputs(inputs), do: {:ok, inputs}
 
       def validate_input(input),
         do: Chore.validate_input(%Chore{mod: __MODULE__}, input)
@@ -111,7 +112,8 @@ defmodule ChoreRunner.DSL do
                      restriction: 0,
                      result_handler: 1,
                      available?: 1,
-                     persist_inputs_in_url?: 0
+                     persist_inputs_in_url?: 0,
+                     validate_inputs: 1
     end
   end
 

@@ -40,6 +40,113 @@ defmodule ChoreRunnerUI.ChoreLiveTest do
     assert render(view) =~ "not_in_options"
   end
 
+  test "shows cross-field errors and clears them when either dependent input is corrected" do
+    {:ok, view, _html} = live(build_conn(), "/chores?chore=CrossFieldValidationChore")
+
+    error = "Registered runs require an even number of Orders."
+
+    assert has_element?(
+             view,
+             "#run_chore_chore_attrs_0_number_of_orders ~ .chore-form-input-errors-wrapper .alert",
+             error
+           )
+
+    assert has_element?(view, ".chore-run-submit-button[disabled]")
+
+    html =
+      view
+      |> form("form[phx-submit=run_chore]",
+        run_chore: %{
+          chore: "CrossFieldValidationChore",
+          chore_attrs: %{buyer_type: "registered", number_of_orders: "4"}
+        }
+      )
+      |> render_change()
+
+    refute html =~ error
+    refute has_element?(view, ".chore-run-submit-button[disabled]")
+
+    view
+    |> form("form[phx-submit=run_chore]",
+      run_chore: %{
+        chore: "CrossFieldValidationChore",
+        chore_attrs: %{buyer_type: "registered", number_of_orders: "3"}
+      }
+    )
+    |> render_change()
+
+    assert has_element?(view, ".chore-run-submit-button[disabled]")
+
+    html =
+      view
+      |> form("form[phx-submit=run_chore]",
+        run_chore: %{
+          chore: "CrossFieldValidationChore",
+          chore_attrs: %{buyer_type: "guest", number_of_orders: "3"}
+        }
+      )
+      |> render_change()
+
+    refute html =~ error
+    refute has_element?(view, ".chore-run-submit-button[disabled]")
+  end
+
+  test "preserves other persisted values across partial cross-field form changes" do
+    {:ok, view, _html} =
+      live(build_conn(), "/chores?chore=PersistedCrossFieldValidationChore")
+
+    render_change(view, "form_changed", %{
+      "run_chore" => %{
+        "chore" => "PersistedCrossFieldValidationChore",
+        "chore_attrs" => %{"generation_key" => "batch_one"}
+      }
+    })
+
+    assert_patch(view)
+
+    render_change(view, "form_changed", %{
+      "run_chore" => %{
+        "chore" => "PersistedCrossFieldValidationChore",
+        "chore_attrs" => %{"number_of_orders" => "3"}
+      }
+    })
+
+    path = assert_patch(view)
+    query = path |> URI.parse() |> Map.fetch!(:query) |> Plug.Conn.Query.decode()
+
+    assert query["inputs"]["generation_key"] == "batch_one"
+    assert query["inputs"]["number_of_orders"] == "3"
+
+    assert has_element?(
+             view,
+             "#run_chore_chore_attrs_0_generation_key[value=batch_one]"
+           )
+
+    assert has_element?(view, "#run_chore_chore_attrs_0_number_of_orders[value=3]")
+    assert has_element?(view, ".chore-run-submit-button[disabled]")
+
+    render_change(view, "form_changed", %{
+      "run_chore" => %{
+        "chore" => "PersistedCrossFieldValidationChore",
+        "chore_attrs" => %{"generation_key" => "batch_two"}
+      }
+    })
+
+    path = assert_patch(view)
+    query = path |> URI.parse() |> Map.fetch!(:query) |> Plug.Conn.Query.decode()
+
+    assert query["inputs"]["generation_key"] == "batch_two"
+    assert query["inputs"]["number_of_orders"] == "3"
+
+    assert has_element?(
+             view,
+             "#run_chore_chore_attrs_0_generation_key[value=batch_two]"
+           )
+
+    assert has_element?(view, "#run_chore_chore_attrs_0_number_of_orders[value=3]")
+    assert has_element?(view, ".chore-run-submit-button[disabled]")
+  end
+
   test "persists non-file form values in the URL and restores them after reload" do
     {:ok, view, _html} = live(build_conn(), "/chores?chore=FormChore&filter=form")
 

@@ -149,7 +149,10 @@ defmodule ChoreRunnerUI.ChoreLive do
     selected_chore = chores[chore_name]
 
     if(currently_selected_chore == selected_chore) do
-      chore_attrs = Map.get(attrs, "chore_attrs", %{})
+      chore_attrs =
+        socket.assigns.form_values
+        |> Map.get("chore_attrs", %{})
+        |> Map.merge(Map.get(attrs, "chore_attrs", %{}))
 
       socket =
         socket
