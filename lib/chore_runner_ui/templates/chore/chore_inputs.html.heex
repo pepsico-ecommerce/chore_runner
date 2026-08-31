@@ -9,21 +9,21 @@
   <% :string -> %>
     <div class="chore-form-input-wrapper chore-form-top-level-input-wrapper">
       <%= label @form, @key, class: "chore-form-label" %>
-      <%= text_input @form, @key, input_options("chore-form-input chore-form-text-input", @persist_inputs_in_url?) %>
+      <%= text_input @form, @key, input_options("chore-form-input chore-form-text-input") %>
       <%= render(__MODULE__, "chore_input_description.html", opts: @opts) %>
       <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
     </div>
   <% type when type in [:int, :float] -> %>
     <div class="chore-form-input-wrapper chore-form-top-level-input-wrapper">
       <%= label @form, @key, class: "chore-form-label" %>
-      <%= number_input @form, @key, input_options("chore-form-input chore-form-text-input chore-form-number-input", @persist_inputs_in_url?) %>
+      <%= number_input @form, @key, input_options("chore-form-input chore-form-text-input chore-form-number-input") %>
       <%= render(__MODULE__, "chore_input_description.html", opts: @opts) %>
       <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
     </div>
   <% :select -> %>
     <div class="chore-form-input-wrapper chore-form-top-level-input-wrapper">
       <%= label @form, @key, class: "chore-form-label" %>
-      <%= select @form, @key, select_options(@opts), select_input_options(@opts, @persist_inputs_in_url?) %>
+      <%= select @form, @key, select_options(@opts), select_input_options(@opts) %>
       <%= render(__MODULE__, "chore_input_description.html", opts: @opts) %>
       <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
     </div>

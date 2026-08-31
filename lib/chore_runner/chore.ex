@@ -79,6 +79,19 @@ defmodule ChoreRunner.Chore do
   If this callback is not defined, the default return is `[]`, or no inputs.
   """
   @callback inputs :: [Input.t()]
+
+  @doc """
+  An optional callback for validating or transforming the complete input map.
+
+  This callback runs after defaults, type casting, and individual field validators have
+  succeeded. It receives only declared inputs with atom keys.
+
+  Return `{:ok, validated_inputs}` to continue or `{:error, keyword_errors}` to reject the
+  inputs. Each error must use a declared input name and a non-empty list of reasons, for
+  example `{:error, number_of_orders: ["must be even"]}`.
+  """
+  @callback validate_inputs(map()) :: {:ok, map()} | {:error, [{atom(), [any()]}]}
+
   @doc """
   A non-optional callback used to contain the main Chore logic.
 
@@ -105,7 +118,8 @@ defmodule ChoreRunner.Chore do
   @optional_callbacks result_handler: 1,
                       available?: 1,
                       instructions: 0,
-                      persist_inputs_in_url?: 0
+                      persist_inputs_in_url?: 0,
+                      validate_inputs: 1
 
   @doc "Returns explicit chore instructions, falling back to the module documentation."
   @spec instructions_for(module()) :: String.t() | nil
@@ -135,9 +149,72 @@ defmodule ChoreRunner.Chore do
       end
     end)
     |> case do
-      {final_inputs, []} -> {:ok, final_inputs}
+      {final_inputs, []} -> validate_inputs(mod, final_inputs, expected_inputs)
       {_, errors} -> {:error, errors}
     end
+  end
+
+  defp validate_inputs(mod, inputs, expected_inputs) do
+    result =
+      if function_exported?(mod, :validate_inputs, 1) do
+        mod.validate_inputs(inputs)
+      else
+        {:ok, inputs}
+      end
+
+    validate_inputs_result(result, mod, expected_inputs)
+  end
+
+  defp validate_inputs_result({:ok, inputs}, mod, expected_inputs) when is_map(inputs) do
+    declared_inputs = declared_input_names(expected_inputs)
+    unknown_inputs = inputs |> Map.keys() |> Enum.reject(&(&1 in declared_inputs))
+
+    if unknown_inputs == [] do
+      {:ok, inputs}
+    else
+      raise ArgumentError,
+            "#{inspect(mod)}.validate_inputs/1 returned undeclared input keys: " <>
+              "#{inspect(unknown_inputs)}; declared inputs: #{inspect(declared_inputs)}"
+    end
+  end
+
+  defp validate_inputs_result({:error, errors} = result, mod, expected_inputs)
+       when is_list(errors) do
+    declared_inputs = declared_input_names(expected_inputs)
+
+    if Keyword.keyword?(errors) do
+      unknown_fields =
+        errors |> Keyword.keys() |> Enum.uniq() |> Enum.reject(&(&1 in declared_inputs))
+
+      if unknown_fields != [] do
+        raise ArgumentError,
+              "#{inspect(mod)}.validate_inputs/1 returned errors for undeclared inputs: " <>
+                "#{inspect(unknown_fields)}; declared inputs: #{inspect(declared_inputs)}"
+      end
+
+      if errors != [] and
+           Enum.all?(errors, fn {_field, reasons} -> is_list(reasons) and reasons != [] end) do
+        {:error, errors}
+      else
+        raise_invalid_validate_inputs_result(mod, result)
+      end
+    else
+      raise_invalid_validate_inputs_result(mod, result)
+    end
+  end
+
+  defp validate_inputs_result(result, mod, _expected_inputs) do
+    raise_invalid_validate_inputs_result(mod, result)
+  end
+
+  defp declared_input_names(expected_inputs) do
+    Enum.map(expected_inputs, fn {_type, name, _opts} -> name end)
+  end
+
+  defp raise_invalid_validate_inputs_result(mod, result) do
+    raise ArgumentError,
+          "#{inspect(mod)}.validate_inputs/1 must return {:ok, map} or " <>
+            "{:error, keyword errors with non-empty reason lists}; got: #{inspect(result)}"
   end
 
   defp verify_valid_input_name(expected_inputs, key) do
