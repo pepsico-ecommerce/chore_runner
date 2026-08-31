@@ -2,7 +2,7 @@
   <% :bool -> %>
     <div class="chore-form-input-wrapper chore-form-top-level-input-wrapper">
       <%= label @form, @key, class: "chore-form-label" %>
-      <%= checkbox @form, @key, input_options("chore-form-input chore-form-checkbox", @persist_inputs_in_url?) %>
+      <%= checkbox @form, @key, checkbox_input_options(@form, @key, @browser_managed_checkboxes?) %>
       <%= render(__MODULE__, "chore_input_description.html", opts: @opts) %>
       <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
     </div>
@@ -36,7 +36,12 @@
       </div>
       <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
       <%= for entry <- Map.get(@uploads, @key).entries do %>
-        <progress value={entry.progress} max="100"> <%= entry.progress %>% </progress>
+        <div class="chore-form-file-entry">
+          <span class="chore-form-file-name" title={entry.client_name}>
+            Selected file: <strong><%= entry.client_name %></strong>
+          </span>
+          <progress value={entry.progress} max="100"> <%= entry.progress %>% </progress>
+        </div>
         <%= for error <- upload_errors(Map.get(@uploads, @key), entry) do %>
           <p class="alert alert-danger"><%= inspect(error) %></p>
         <% end %>

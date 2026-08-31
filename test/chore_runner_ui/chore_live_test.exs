@@ -50,7 +50,8 @@ defmodule ChoreRunnerUI.ChoreLiveTest do
         chore_attrs: %{
           static_choice: "alpha",
           dynamic_choice: "2",
-          count: "7"
+          count: "7",
+          commit?: "true"
         }
       }
     )
@@ -59,10 +60,14 @@ defmodule ChoreRunnerUI.ChoreLiveTest do
     path = assert_patch(view)
     query = path |> URI.parse() |> Map.fetch!(:query) |> Plug.Conn.Query.decode()
 
+    assert %{socket: %{assigns: %{browser_managed_checkboxes?: true}}} =
+             :sys.get_state(view.pid)
+
     assert query == %{
              "chore" => "FormChore",
              "filter" => "form",
              "inputs" => %{
+               "commit?" => "true",
                "count" => "7",
                "dynamic_choice" => "2",
                "static_choice" => "alpha"
@@ -76,7 +81,30 @@ defmodule ChoreRunnerUI.ChoreLiveTest do
              "#run_chore_chore_attrs_0_dynamic_choice option[selected][value=2]"
            )
 
+    assert has_element?(
+             reloaded_view,
+             ~s|input[type=checkbox][name="run_chore[chore_attrs][commit?]"][checked]:not([phx-update])|
+           )
+
     refute has_element?(reloaded_view, ".chore-run-submit-button[disabled]")
+  end
+
+  test "shows the selected file name" do
+    {:ok, view, _html} = live(build_conn(), "/chores?chore=FormChore")
+
+    upload =
+      file_input(view, "form[phx-submit=run_chore]", :upload, [
+        %{
+          last_modified: 1_725_000_000_000,
+          name: "historical-orders.csv",
+          content: "order_id,upc\n1,012345678905\n",
+          type: "text/csv"
+        }
+      ])
+
+    render_upload(upload, "historical-orders.csv")
+
+    assert has_element?(view, ".chore-form-file-name", "historical-orders.csv")
   end
 
   test "persists the chore filter in the URL and restores it after reload" do

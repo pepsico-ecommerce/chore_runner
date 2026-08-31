@@ -58,6 +58,7 @@ defmodule ChoreRunnerUI.ChoreLive do
         inputs: [],
         file_inputs: [],
         form_values: ChoreForm.form_data(nil, %{}),
+        browser_managed_checkboxes?: false,
         instructions: nil,
         persist_inputs_in_url?: false,
         selected_chore: nil,
@@ -153,6 +154,7 @@ defmodule ChoreRunnerUI.ChoreLive do
       socket =
         socket
         |> assign(:form_values, ChoreForm.form_data(chore_name, chore_attrs))
+        |> assign(:browser_managed_checkboxes?, true)
         |> assign_errors(validate_input(selected_chore, chore_attrs))
 
       if persist_inputs_in_url?(selected_chore) do
@@ -171,6 +173,8 @@ defmodule ChoreRunnerUI.ChoreLive do
       query_params =
         %{"chore" => chore_name}
         |> put_filter(socket.assigns.filter_string)
+
+      socket = assign(socket, :browser_managed_checkboxes?, false)
 
       {:noreply, push_patch(socket, to: path_with_query(uri.path, query_params))}
     end

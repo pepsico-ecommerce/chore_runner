@@ -31,6 +31,21 @@ defmodule ChoreRunnerUI.ChoreView do
     end
   end
 
+  defp checkbox_input_options(form, key, browser_managed_checkboxes?) do
+    checked =
+      form
+      |> Phoenix.HTML.Form.input_value(key)
+      |> then(&Phoenix.HTML.Form.normalize_value("checkbox", &1))
+
+    input_options = [class: "chore-form-input chore-form-checkbox", checked: checked]
+
+    if browser_managed_checkboxes? do
+      Keyword.put(input_options, :phx_update, "ignore")
+    else
+      input_options
+    end
+  end
+
   defp select_input_options(opts, persist_inputs_in_url?) do
     input_opts = input_options("chore-form-input chore-form-select", persist_inputs_in_url?)
 
