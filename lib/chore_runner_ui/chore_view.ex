@@ -23,13 +23,10 @@ defmodule ChoreRunnerUI.ChoreView do
 
   defp select_options(opts), do: Input.select_options(opts)
 
-  defp input_options(class, persist_inputs_in_url?) do
-    if persist_inputs_in_url? do
-      [class: class]
-    else
-      [class: class, phx_update: "ignore"]
-    end
-  end
+  defp format_error(error) when is_binary(error), do: error
+  defp format_error(error), do: inspect(error)
+
+  defp input_options(class), do: [class: class, phx_update: "ignore"]
 
   defp checkbox_input_options(form, key, browser_managed_checkboxes?) do
     checked =
@@ -46,8 +43,8 @@ defmodule ChoreRunnerUI.ChoreView do
     end
   end
 
-  defp select_input_options(opts, persist_inputs_in_url?) do
-    input_opts = input_options("chore-form-input chore-form-select", persist_inputs_in_url?)
+  defp select_input_options(opts) do
+    input_opts = input_options("chore-form-input chore-form-select")
 
     case Keyword.fetch(opts, :prompt) do
       {:ok, prompt} -> Keyword.put(input_opts, :prompt, prompt)

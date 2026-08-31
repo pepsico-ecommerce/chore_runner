@@ -7,7 +7,8 @@ defmodule ChoreRunner.TestChores.PersistedCrossFieldValidationChore do
         default: "registered"
       ),
       int(:number_of_orders, default: 4),
-      string(:generation_key)
+      string(:generation_key),
+      int(:batch_size, default: 500)
     ]
   end
 

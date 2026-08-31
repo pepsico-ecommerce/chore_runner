@@ -1,5 +1,5 @@
 <div class="chore-form-input-errors-wrapper">
   <%= for error <- Map.get(@chore_errors, @key, []) do %>
-    <p class="alert alert-danger"><%= inspect(error) %></p>
+    <p class="alert alert-danger"><%= format_error(error) %></p>
   <% end %>
 </div>
