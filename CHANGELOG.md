@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+* Preserve URL-persisted boolean values when LiveView rerenders chore forms.
+* Improve file input contrast and display the selected file name above its upload progress.
+
 ## v0.7.0 (2026-08-05)
 
 * Added `selectbox` inputs with static or callback-provided Phoenix options.

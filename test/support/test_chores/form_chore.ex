@@ -14,6 +14,7 @@ defmodule ChoreRunner.TestChores.FormChore do
         description: "Options returned by the chore"
       ),
       int(:count, default: 5),
+      bool(:commit?, default: false),
       file(:upload)
     ]
   end

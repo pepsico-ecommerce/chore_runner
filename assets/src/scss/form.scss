@@ -71,7 +71,37 @@
 }
 
 .chore-form-file-input {
-  color: white;
+  box-sizing: border-box;
+  color: $pepdirect-gray2;
+  background-color: white;
+  cursor: pointer;
+  font-family: $font-primary;
+  min-height: 40px;
+  width: 100%;
+
+  &::file-selector-button {
+    background-color: $pepdirect-gray6;
+    border: 0;
+    border-right: 1px solid $border-color;
+    color: $pepdirect-gray1;
+    cursor: pointer;
+    font: inherit;
+    margin: -6px 12px -6px -12px;
+    padding: 8px 12px;
+  }
+}
+
+.chore-form-file-entry {
+  margin-top: 8px;
+}
+
+.chore-form-file-name {
+  color: $pepdirect-gray2;
+  display: block;
+  font-family: $font-primary;
+  font-size: 12px;
+  margin-bottom: 4px;
+  overflow-wrap: anywhere;
 }
 
 .chore-form-description {
