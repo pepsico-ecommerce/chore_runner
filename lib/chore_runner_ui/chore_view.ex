@@ -21,17 +21,23 @@ defmodule ChoreRunnerUI.ChoreView do
         download_plug_path: download_plug_path
       )
 
-  defp select_options(opts), do: Input.select_options(opts)
-
   defp format_error(error) when is_binary(error), do: error
   defp format_error(:not_in_options), do: "Select one of the available options"
   defp format_error(:invalid), do: "Value is invalid"
   defp format_error(:does_not_exist), do: "File does not exist"
   defp format_error(error), do: inspect(error)
 
-  defp input_options(class), do: [class: class, phx_update: "ignore"]
+  # Dependent inputs are server-managed: their options and values change when an input
+  # they depend on changes, so the browser must accept those patches.
+  defp input_options(class, opts) do
+    if server_managed?(opts),
+      do: [class: class],
+      else: [class: class, phx_update: "ignore"]
+  end
 
-  defp checkbox_input_options(form, key, browser_managed_checkboxes?) do
+  defp server_managed?(opts), do: Input.dependencies(opts) != []
+
+  defp checkbox_input_options(form, key, opts, browser_managed_checkboxes?) do
     checked =
       form
       |> Phoenix.HTML.Form.input_value(key)
@@ -39,7 +45,7 @@ defmodule ChoreRunnerUI.ChoreView do
 
     input_options = [class: "chore-form-input chore-form-checkbox", checked: checked]
 
-    if browser_managed_checkboxes? do
+    if browser_managed_checkboxes? and not server_managed?(opts) do
       Keyword.put(input_options, :phx_update, "ignore")
     else
       input_options
@@ -47,7 +53,7 @@ defmodule ChoreRunnerUI.ChoreView do
   end
 
   defp select_input_options(opts) do
-    input_opts = input_options("chore-form-input chore-form-select")
+    input_opts = input_options("chore-form-input chore-form-select", opts)
 
     case Keyword.fetch(opts, :prompt) do
       {:ok, prompt} -> Keyword.put(input_opts, :prompt, prompt)

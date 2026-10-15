@@ -67,6 +67,10 @@ defmodule ChoreRunner.Chore do
   The supported options are
   - `:description` — a string description of the input, for UI use
   - `:default` — a value used when the caller omits this input and prefilled in the UI
+  - `:depends_on` — a list of inputs declared earlier that must be valid before this input is
+    shown and validated. One-arity `selectbox` option providers receive their validated values.
+  - `:visible?` — a one-arity function receiving the `:depends_on` values; the input is shown
+    and validated only when it returns `true`. Requires `:depends_on`.
   - `:validators` — a list of anonymous or captured validator functions.
     Valiator functions should accept a single argument as a parameter, but can return a variety of things, including:
     - an `{:ok, value}`, or `{:error, reason}` tuple
@@ -132,25 +136,99 @@ defmodule ChoreRunner.Chore do
     end
   end
 
-  def validate_input(%__MODULE__{mod: mod}, input) do
+  @type resolved_inputs :: %{
+          validated: map(),
+          errors: [{atom(), [any()]}],
+          active_inputs: [Input.t()],
+          select_options: %{atom() => Input.select_options()}
+        }
+
+  @doc """
+  Resolves a chore's inputs in declaration order.
+
+  An input is active when every input in its `:depends_on` list is active and valid, and its
+  `:visible?` function (if any) returns `true`. Inactive inputs are not validated and are
+  left out of `validated`. Select options are resolved once per active select, using the
+  validated values of its dependencies. `errors` includes cross-field errors from
+  `validate_inputs/1`, which runs only when every field is valid.
+  """
+  @spec resolve_inputs(t(), map()) :: resolved_inputs()
+  def resolve_inputs(%__MODULE__{mod: mod}, input) do
     expected_inputs = mod.inputs()
+    :ok = Input.validate_dependencies!(expected_inputs)
     input = put_default_values(input, expected_inputs)
 
-    Enum.reduce(input, {%{}, []}, fn {key, val}, {validated_inputs, errors_acc} ->
-      with {:ok, {type, name, opts}} <- verify_valid_input_name(expected_inputs, key),
-           {:ok, validated_value} <- validate_input(name, val, type, opts) do
-        {Map.put(validated_inputs, name, validated_value), errors_acc}
-      else
-        {:error, :invalid_input_name} ->
-          {validated_inputs, errors_acc}
+    resolved =
+      Enum.reduce(
+        expected_inputs,
+        %{validated: %{}, errors: [], active_inputs: [], select_options: %{}},
+        &resolve_input(&1, &2, input)
+      )
 
-        {:error, name, errors} ->
-          {validated_inputs, [{name, errors} | errors_acc]}
+    resolved = %{
+      resolved
+      | errors: Enum.reverse(resolved.errors),
+        active_inputs: Enum.reverse(resolved.active_inputs)
+    }
+
+    case resolved do
+      %{errors: [], validated: validated} ->
+        case validate_inputs(mod, validated, expected_inputs) do
+          {:ok, validated} -> %{resolved | validated: validated}
+          {:error, errors} -> %{resolved | errors: errors}
+        end
+
+      resolved ->
+        resolved
+    end
+  end
+
+  def validate_input(%__MODULE__{} = chore, input) do
+    case resolve_inputs(chore, input) do
+      %{errors: [], validated: validated} -> {:ok, validated}
+      %{errors: errors} -> {:error, errors}
+    end
+  end
+
+  defp resolve_input({type, name, opts} = declared_input, resolved, input) do
+    dependencies = Input.dependencies(opts)
+    dependency_values = Map.take(resolved.validated, dependencies)
+
+    if active_input?(opts, dependencies, dependency_values) do
+      {opts, resolved} = resolve_select_options(type, name, opts, dependency_values, resolved)
+      resolved = %{resolved | active_inputs: [declared_input | resolved.active_inputs]}
+
+      with {:ok, value} <- fetch_input(input, name),
+           {:ok, validated_value} <- validate_input(name, value, type, opts) do
+        %{resolved | validated: Map.put(resolved.validated, name, validated_value)}
+      else
+        :error -> resolved
+        {:error, name, errors} -> %{resolved | errors: [{name, errors} | resolved.errors]}
       end
-    end)
-    |> case do
-      {final_inputs, []} -> validate_inputs(mod, final_inputs, expected_inputs)
-      {_, errors} -> {:error, errors}
+    else
+      resolved
+    end
+  end
+
+  defp active_input?(opts, dependencies, dependency_values) do
+    Enum.all?(dependencies, &Map.has_key?(dependency_values, &1)) and
+      Input.visible?(opts, dependency_values)
+  end
+
+  defp resolve_select_options(:select, name, opts, dependency_values, resolved) do
+    options = Input.select_options(opts, dependency_values)
+
+    {Keyword.put(opts, :options, options),
+     %{resolved | select_options: Map.put(resolved.select_options, name, options)}}
+  end
+
+  defp resolve_select_options(_type, _name, opts, _dependency_values, resolved),
+    do: {opts, resolved}
+
+  defp fetch_input(input, name) do
+    case Map.fetch(input, name) do
+      {:ok, value} -> {:ok, value}
+      :error -> Map.fetch(input, to_string(name))
     end
   end
 
@@ -215,20 +293,6 @@ defmodule ChoreRunner.Chore do
     raise ArgumentError,
           "#{inspect(mod)}.validate_inputs/1 must return {:ok, map} or " <>
             "{:error, keyword errors with non-empty reason lists}; got: #{inspect(result)}"
-  end
-
-  defp verify_valid_input_name(expected_inputs, key) do
-    Enum.find_value(expected_inputs, fn {type, name, opts} ->
-      if name == key or "#{name}" == key do
-        {:ok, {type, name, opts}}
-      else
-        false
-      end
-    end)
-    |> case do
-      nil -> {:error, :invalid_input_name}
-      {:ok, res} -> {:ok, res}
-    end
   end
 
   defp validate_input(name, value, type, opts) do

@@ -74,6 +74,25 @@ defmodule ChoreRunner.InputTest do
       end
     end
 
+    test "passes dependency values to a one-arity options provider" do
+      {:select, :city, opts} =
+        Input.selectbox(:city, fn %{region: region} -> [{"#{region} city", "#{region}_city"}] end,
+          depends_on: [:region]
+        )
+
+      assert Input.select_options(opts, %{region: "north"}) == [{"north city", "north_city"}]
+
+      assert_raise ArgumentError, ~r/declare :depends_on and use select_options\/2/, fn ->
+        Input.select_options(opts)
+      end
+    end
+
+    test "keeps zero-arity and static options working with dependency values" do
+      {:select, :status, opts} = Input.selectbox(:status, fn -> [{"Enabled", true}] end)
+
+      assert Input.select_options(opts, %{}) == [{"Enabled", true}]
+    end
+
     test "rejects malformed provider results" do
       {:select, :selection, opts} = Input.selectbox(:selection, fn -> :invalid end)
 
@@ -86,5 +105,11 @@ defmodule ChoreRunner.InputTest do
   test "defaults are validated and supplied when a caller omits the input" do
     assert {:ok, %{batch_size: 25}} = DefaultChore.validate_input(%{})
     assert {:ok, %{batch_size: 10}} = DefaultChore.validate_input(%{"batch_size" => "10"})
+  end
+
+  test "shows inputs without visible? and evaluates visible? against dependency values" do
+    assert Input.visible?([], %{})
+    assert Input.visible?([visible?: &(&1.mode == "detailed")], %{mode: "detailed"})
+    refute Input.visible?([visible?: &(&1.mode == "detailed")], %{mode: "summary"})
   end
 end

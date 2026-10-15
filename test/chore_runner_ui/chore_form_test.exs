@@ -36,4 +36,32 @@ defmodule ChoreRunnerUI.ChoreFormTest do
 
     assert ChoreForm.persistable_values(inputs, values) == %{"name" => "safe"}
   end
+
+  test "resets transitive dependents of a changed input to their initial values" do
+    inputs = [
+      {:select, :region, [options: ["north", "south"], prompt: "Choose a region"]},
+      {:select, :city, [options: &Function.identity/1, prompt: "Choose", depends_on: [:region]]},
+      {:string, :street, [depends_on: [:city]]},
+      {:int, :guests, [default: 2, depends_on: [:region]]},
+      {:string, :note, []}
+    ]
+
+    previous = %{
+      "region" => "north",
+      "city" => "oslo",
+      "street" => "Main",
+      "guests" => "4",
+      "note" => "kept"
+    }
+
+    assert ChoreForm.reset_dependents(inputs, previous, %{previous | "region" => "south"}) == %{
+             "region" => "south",
+             "city" => "",
+             "guests" => 2,
+             "note" => "kept"
+           }
+
+    assert ChoreForm.reset_dependents(inputs, previous, %{previous | "note" => "changed"}) ==
+             %{previous | "note" => "changed"}
+  end
 end

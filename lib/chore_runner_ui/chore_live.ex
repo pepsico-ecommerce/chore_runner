@@ -56,6 +56,8 @@ defmodule ChoreRunnerUI.ChoreLive do
         params: params,
         session: session,
         inputs: [],
+        active_inputs: [],
+        select_options: %{},
         file_inputs: [],
         form_values: ChoreForm.form_data(nil, %{}),
         browser_managed_checkboxes?: false,
@@ -80,7 +82,7 @@ defmodule ChoreRunnerUI.ChoreLive do
       inputs = selected_chore.inputs()
       persisted_values = persisted_values(selected_chore, params)
       input_values = ChoreForm.initial_values(inputs, persisted_values)
-      errors = validate_input(selected_chore, input_values)
+      resolved_inputs = resolve_inputs(selected_chore, input_values)
 
       socket =
         socket
@@ -96,7 +98,7 @@ defmodule ChoreRunnerUI.ChoreLive do
           persist_inputs_in_url?: persist_inputs_in_url?(selected_chore),
           uri: URI.parse(url)
         )
-        |> assign_errors(errors)
+        |> assign_resolved_inputs(resolved_inputs)
         |> set_inputs(inputs)
 
       {:noreply, socket}
@@ -111,6 +113,8 @@ defmodule ChoreRunnerUI.ChoreLive do
           form_values: ChoreForm.form_data(nil, %{}),
           instructions: nil,
           persist_inputs_in_url?: false,
+          active_inputs: [],
+          select_options: %{},
           chore_errors: %{},
           is_chore_valid: false,
           uri: URI.parse(url)
@@ -149,19 +153,27 @@ defmodule ChoreRunnerUI.ChoreLive do
     selected_chore = chores[chore_name]
 
     if(currently_selected_chore == selected_chore) do
+      inputs = selected_chore.inputs()
+      previous_attrs = Map.get(socket.assigns.form_values, "chore_attrs", %{})
+
       chore_attrs =
-        socket.assigns.form_values
-        |> Map.get("chore_attrs", %{})
-        |> Map.merge(Map.get(attrs, "chore_attrs", %{}))
+        ChoreForm.reset_dependents(
+          inputs,
+          previous_attrs,
+          Map.merge(previous_attrs, Map.get(attrs, "chore_attrs", %{}))
+        )
+
+      resolved_inputs = resolve_inputs(selected_chore, chore_attrs)
 
       socket =
         socket
         |> assign(:form_values, ChoreForm.form_data(chore_name, chore_attrs))
         |> assign(:browser_managed_checkboxes?, true)
-        |> assign_errors(validate_input(selected_chore, chore_attrs))
+        |> assign_resolved_inputs(resolved_inputs)
 
       if persist_inputs_in_url?(selected_chore) do
-        persisted_values = ChoreForm.persistable_values(selected_chore.inputs(), chore_attrs)
+        persisted_values =
+          ChoreForm.persistable_values(resolved_inputs.active_inputs, chore_attrs)
 
         query_params =
           %{"chore" => chore_name, "inputs" => persisted_values}
@@ -363,6 +375,15 @@ defmodule ChoreRunnerUI.ChoreLive do
     end)
   end
 
+  defp assign_resolved_inputs(socket, resolved_inputs) do
+    socket
+    |> assign(
+      active_inputs: resolved_inputs.active_inputs,
+      select_options: resolved_inputs.select_options
+    )
+    |> assign_errors(resolved_inputs.errors)
+  end
+
   defp assign_errors(socket, []) do
     assign(socket, chore_errors: %{}, is_chore_valid: true)
   end
@@ -383,11 +404,8 @@ defmodule ChoreRunnerUI.ChoreLive do
     function_exported?(chore, :persist_inputs_in_url?, 0) and chore.persist_inputs_in_url?()
   end
 
-  defp validate_input(chore, input) do
-    case chore.validate_input(input) do
-      {:ok, _validated_input} -> []
-      {:error, errors} -> errors
-    end
+  defp resolve_inputs(chore, input) do
+    ChoreRunner.Chore.resolve_inputs(%ChoreRunner.Chore{mod: chore}, input)
   end
 
   defp query_params(%URI{query: nil}), do: %{}

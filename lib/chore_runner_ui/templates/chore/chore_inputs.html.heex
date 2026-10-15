@@ -2,28 +2,28 @@
   <% :bool -> %>
     <div class="chore-form-input-wrapper chore-form-top-level-input-wrapper">
       <%= label @form, @key, class: "chore-form-label" %>
-      <%= checkbox @form, @key, checkbox_input_options(@form, @key, @browser_managed_checkboxes?) %>
+      <%= checkbox @form, @key, checkbox_input_options(@form, @key, @opts, @browser_managed_checkboxes?) %>
       <%= render(__MODULE__, "chore_input_description.html", opts: @opts) %>
       <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
     </div>
   <% :string -> %>
     <div class="chore-form-input-wrapper chore-form-top-level-input-wrapper">
       <%= label @form, @key, class: "chore-form-label" %>
-      <%= text_input @form, @key, input_options("chore-form-input chore-form-text-input") %>
+      <%= text_input @form, @key, input_options("chore-form-input chore-form-text-input", @opts) %>
       <%= render(__MODULE__, "chore_input_description.html", opts: @opts) %>
       <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
     </div>
   <% type when type in [:int, :float] -> %>
     <div class="chore-form-input-wrapper chore-form-top-level-input-wrapper">
       <%= label @form, @key, class: "chore-form-label" %>
-      <%= number_input @form, @key, input_options("chore-form-input chore-form-text-input chore-form-number-input") %>
+      <%= number_input @form, @key, input_options("chore-form-input chore-form-text-input chore-form-number-input", @opts) %>
       <%= render(__MODULE__, "chore_input_description.html", opts: @opts) %>
       <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
     </div>
   <% :select -> %>
     <div class="chore-form-input-wrapper chore-form-top-level-input-wrapper">
       <%= label @form, @key, class: "chore-form-label" %>
-      <%= select @form, @key, select_options(@opts), select_input_options(@opts) %>
+      <%= select @form, @key, Map.fetch!(@select_options, @key), select_input_options(@opts) %>
       <%= render(__MODULE__, "chore_input_description.html", opts: @opts) %>
       <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
     </div>
