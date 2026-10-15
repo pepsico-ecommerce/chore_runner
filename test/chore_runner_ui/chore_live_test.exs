@@ -330,24 +330,34 @@ defmodule ChoreRunnerUI.ChoreLiveTest do
       {:ok, view, _html} = live(build_conn(), "/chores?chore=DependentInputsChore")
 
       assert has_element?(view, "#run_chore_chore_attrs_0_region[phx-update=ignore]")
-      refute has_element?(view, "#run_chore_chore_attrs_0_city")
-      refute has_element?(view, "#run_chore_chore_attrs_0_district")
+      refute has_element?(view, "[name=\"run_chore[chore_attrs][city]\"]")
+      refute has_element?(view, "[name=\"run_chore[chore_attrs][district]\"]")
       assert has_element?(view, ".chore-run-submit-button[disabled]")
 
       change_dependent_inputs(view, %{"region" => "north"})
 
-      assert has_element?(view, "#run_chore_chore_attrs_0_city option[value=oslo]", "Oslo")
-      assert has_element?(view, "#run_chore_chore_attrs_0_city option[value=bergen]", "Bergen")
-      refute has_element?(view, "#run_chore_chore_attrs_0_city option[value=lisbon]")
-      refute has_element?(view, "#run_chore_chore_attrs_0_city[phx-update]")
-      refute has_element?(view, "#run_chore_chore_attrs_0_district")
+      assert has_element?(
+               view,
+               "[name=\"run_chore[chore_attrs][city]\"] option[value=oslo]",
+               "Oslo"
+             )
+
+      assert has_element?(
+               view,
+               "[name=\"run_chore[chore_attrs][city]\"] option[value=bergen]",
+               "Bergen"
+             )
+
+      refute has_element?(view, "[name=\"run_chore[chore_attrs][city]\"] option[value=lisbon]")
+      assert has_element?(view, "[name=\"run_chore[chore_attrs][city]\"][phx-update=ignore]")
+      refute has_element?(view, "[name=\"run_chore[chore_attrs][district]\"]")
       assert has_element?(view, ".chore-run-submit-button[disabled]")
 
       change_dependent_inputs(view, %{"region" => "north", "city" => "oslo"})
 
       assert has_element?(
                view,
-               "#run_chore_chore_attrs_0_district option[value=frogner]",
+               "[name=\"run_chore[chore_attrs][district]\"] option[value=frogner]",
                "Frogner"
              )
 
@@ -373,34 +383,56 @@ defmodule ChoreRunnerUI.ChoreLiveTest do
           "district" => "frogner"
         })
 
-      assert has_element?(view, "#run_chore_chore_attrs_0_city option[value=lisbon]", "Lisbon")
-      refute has_element?(view, "#run_chore_chore_attrs_0_city option[selected]")
-      refute has_element?(view, "#run_chore_chore_attrs_0_district")
+      assert has_element?(
+               view,
+               "[name=\"run_chore[chore_attrs][city]\"] option[value=lisbon]",
+               "Lisbon"
+             )
+
+      refute has_element?(view, "[name=\"run_chore[chore_attrs][city]\"] option[selected]")
+      refute has_element?(view, "[name=\"run_chore[chore_attrs][district]\"]")
       assert has_element?(view, ".chore-run-submit-button[disabled]")
 
       assert persisted_inputs(path) == %{"region" => "south", "city" => "", "mode" => "summary"}
     end
 
+    test "replaces a dependent input only when its dependency values change" do
+      {:ok, view, _html} = live(build_conn(), "/chores?chore=DependentInputsChore")
+
+      change_dependent_inputs(view, %{"region" => "north"})
+      city_input_id = city_input_id(view)
+
+      change_dependent_inputs(view, %{"region" => "north", "city" => "oslo"})
+
+      change_dependent_inputs(view, %{"region" => "north", "city" => "oslo", "mode" => "detailed"})
+
+      assert city_input_id(view) == city_input_id
+
+      change_dependent_inputs(view, %{"region" => "south", "city" => "oslo", "mode" => "detailed"})
+
+      refute city_input_id(view) == city_input_id
+    end
+
     test "shows inputs whose visible? function accepts the dependency values" do
       {:ok, view, _html} = live(build_conn(), "/chores?chore=DependentInputsChore")
 
-      refute has_element?(view, "#run_chore_chore_attrs_0_guests")
+      refute has_element?(view, "[name=\"run_chore[chore_attrs][guests]\"]")
 
       change_dependent_inputs(view, %{"mode" => "detailed"})
 
-      assert has_element?(view, "#run_chore_chore_attrs_0_guests[value=2]")
+      assert has_element?(view, "[name=\"run_chore[chore_attrs][guests]\"][value=2]")
 
       change_dependent_inputs(view, %{"mode" => "detailed", "guests" => "50"})
 
       assert has_element?(
                view,
-               "#run_chore_chore_attrs_0_guests ~ .chore-form-input-errors-wrapper .alert",
+               "[name=\"run_chore[chore_attrs][guests]\"] ~ .chore-form-input-errors-wrapper .alert",
                "Choose between 1 and 10 guests"
              )
 
       path = change_dependent_inputs(view, %{"mode" => "summary", "guests" => "50"})
 
-      refute has_element?(view, "#run_chore_chore_attrs_0_guests")
+      refute has_element?(view, "[name=\"run_chore[chore_attrs][guests]\"]")
       refute Map.has_key?(persisted_inputs(path), "guests")
     end
 
@@ -414,11 +446,14 @@ defmodule ChoreRunnerUI.ChoreLiveTest do
 
       {:ok, view, _html} = live(build_conn(), path)
 
-      assert has_element?(view, "#run_chore_chore_attrs_0_city option[selected][value=lisbon]")
+      assert has_element?(
+               view,
+               "[name=\"run_chore[chore_attrs][city]\"] option[selected][value=lisbon]"
+             )
 
       assert has_element?(
                view,
-               "#run_chore_chore_attrs_0_district option[selected][value=belem]"
+               "[name=\"run_chore[chore_attrs][district]\"] option[selected][value=belem]"
              )
 
       refute has_element?(view, ".chore-run-submit-button[disabled]")
@@ -431,6 +466,12 @@ defmodule ChoreRunnerUI.ChoreLiveTest do
     })
 
     assert_patch(view)
+  end
+
+  defp city_input_id(view) do
+    html = view |> element(~s(select[name="run_chore[chore_attrs][city]"])) |> render()
+    [_, id] = Regex.run(~r/ id="([^"]+)"/, html)
+    id
   end
 
   defp persisted_inputs(path) do

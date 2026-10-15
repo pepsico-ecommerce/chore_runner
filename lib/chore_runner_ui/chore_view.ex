@@ -27,17 +27,31 @@ defmodule ChoreRunnerUI.ChoreView do
   defp format_error(:does_not_exist), do: "File does not exist"
   defp format_error(error), do: inspect(error)
 
-  # Dependent inputs are server-managed: their options and values change when an input
-  # they depend on changes, so the browser must accept those patches.
-  defp input_options(class, opts) do
-    if server_managed?(opts),
-      do: [class: class],
-      else: [class: class, phx_update: "ignore"]
+  defp input_options(class), do: [class: class, phx_update: "ignore"]
+
+  # Inputs stay `phx-update="ignore"` so URL patches never overwrite browser values. A
+  # dependent input's id changes with its dependency values instead, so LiveView replaces
+  # it with freshly rendered options and value whenever a dependency changes.
+  defp dependent_input_id(form, key, opts, form_values) do
+    case Input.dependencies(opts) do
+      [] ->
+        []
+
+      dependencies ->
+        attrs = Map.get(form_values, "chore_attrs", %{})
+        values = Enum.map(dependencies, &Map.get(attrs, to_string(&1)))
+        [id: "#{Phoenix.HTML.Form.input_id(form, key)}_#{:erlang.phash2(values)}"]
+    end
   end
 
-  defp server_managed?(opts), do: Input.dependencies(opts) != []
+  defp label_options(form, key, opts, form_values) do
+    case dependent_input_id(form, key, opts, form_values) do
+      [id: id] -> [class: "chore-form-label", for: id]
+      [] -> [class: "chore-form-label"]
+    end
+  end
 
-  defp checkbox_input_options(form, key, opts, browser_managed_checkboxes?) do
+  defp checkbox_input_options(form, key, browser_managed_checkboxes?) do
     checked =
       form
       |> Phoenix.HTML.Form.input_value(key)
@@ -45,7 +59,7 @@ defmodule ChoreRunnerUI.ChoreView do
 
     input_options = [class: "chore-form-input chore-form-checkbox", checked: checked]
 
-    if browser_managed_checkboxes? and not server_managed?(opts) do
+    if browser_managed_checkboxes? do
       Keyword.put(input_options, :phx_update, "ignore")
     else
       input_options
@@ -53,7 +67,7 @@ defmodule ChoreRunnerUI.ChoreView do
   end
 
   defp select_input_options(opts) do
-    input_opts = input_options("chore-form-input chore-form-select", opts)
+    input_opts = input_options("chore-form-input chore-form-select")
 
     case Keyword.fetch(opts, :prompt) do
       {:ok, prompt} -> Keyword.put(input_opts, :prompt, prompt)

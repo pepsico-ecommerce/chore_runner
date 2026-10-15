@@ -1,29 +1,29 @@
 <%= case @type do %>
   <% :bool -> %>
     <div class="chore-form-input-wrapper chore-form-top-level-input-wrapper">
-      <%= label @form, @key, class: "chore-form-label" %>
-      <%= checkbox @form, @key, checkbox_input_options(@form, @key, @opts, @browser_managed_checkboxes?) %>
+      <%= label @form, @key, label_options(@form, @key, @opts, @form_values) %>
+      <%= checkbox @form, @key, checkbox_input_options(@form, @key, @browser_managed_checkboxes?) ++ dependent_input_id(@form, @key, @opts, @form_values) %>
       <%= render(__MODULE__, "chore_input_description.html", opts: @opts) %>
       <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
     </div>
   <% :string -> %>
     <div class="chore-form-input-wrapper chore-form-top-level-input-wrapper">
-      <%= label @form, @key, class: "chore-form-label" %>
-      <%= text_input @form, @key, input_options("chore-form-input chore-form-text-input", @opts) %>
+      <%= label @form, @key, label_options(@form, @key, @opts, @form_values) %>
+      <%= text_input @form, @key, input_options("chore-form-input chore-form-text-input") ++ dependent_input_id(@form, @key, @opts, @form_values) %>
       <%= render(__MODULE__, "chore_input_description.html", opts: @opts) %>
       <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
     </div>
   <% type when type in [:int, :float] -> %>
     <div class="chore-form-input-wrapper chore-form-top-level-input-wrapper">
-      <%= label @form, @key, class: "chore-form-label" %>
-      <%= number_input @form, @key, input_options("chore-form-input chore-form-text-input chore-form-number-input", @opts) %>
+      <%= label @form, @key, label_options(@form, @key, @opts, @form_values) %>
+      <%= number_input @form, @key, input_options("chore-form-input chore-form-text-input chore-form-number-input") ++ dependent_input_id(@form, @key, @opts, @form_values) %>
       <%= render(__MODULE__, "chore_input_description.html", opts: @opts) %>
       <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
     </div>
   <% :select -> %>
     <div class="chore-form-input-wrapper chore-form-top-level-input-wrapper">
-      <%= label @form, @key, class: "chore-form-label" %>
-      <%= select @form, @key, Map.fetch!(@select_options, @key), select_input_options(@opts) %>
+      <%= label @form, @key, label_options(@form, @key, @opts, @form_values) %>
+      <%= select @form, @key, Map.fetch!(@select_options, @key), select_input_options(@opts) ++ dependent_input_id(@form, @key, @opts, @form_values) %>
       <%= render(__MODULE__, "chore_input_description.html", opts: @opts) %>
       <%= render(__MODULE__, "chore_input_errors.html", chore_errors: @chore_errors, key: @key) %>
     </div>
