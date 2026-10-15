@@ -18,7 +18,7 @@
           <% end %>
           <div class="chore-form-inputs-flexbox">
             <.inputs_for :let={ff} field={f[:chore_attrs]}>
-              <%= for {type, key, opts} <- @inputs do %>
+              <%= for {type, key, opts} <- @active_inputs do %>
                 <%= render(__MODULE__, "chore_inputs.html", Map.merge(assigns, %{type: type, key: key, form: ff, opts: opts})) %>
               <% end %>
             </.inputs_for>

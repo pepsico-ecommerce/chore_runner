@@ -325,6 +325,159 @@ defmodule ChoreRunnerUI.ChoreLiveTest do
     assert ChoreRunner.TestChores.NonPersistedChore.persist_inputs_in_url?() == false
   end
 
+  describe "dependent inputs" do
+    test "shows each dependent select once the input it depends on is valid" do
+      {:ok, view, _html} = live(build_conn(), "/chores?chore=DependentInputsChore")
+
+      assert has_element?(view, "#run_chore_chore_attrs_0_region[phx-update=ignore]")
+      refute has_element?(view, "[name=\"run_chore[chore_attrs][city]\"]")
+      refute has_element?(view, "[name=\"run_chore[chore_attrs][district]\"]")
+      assert has_element?(view, ".chore-run-submit-button[disabled]")
+
+      change_dependent_inputs(view, %{"region" => "north"})
+
+      assert has_element?(
+               view,
+               "[name=\"run_chore[chore_attrs][city]\"] option[value=oslo]",
+               "Oslo"
+             )
+
+      assert has_element?(
+               view,
+               "[name=\"run_chore[chore_attrs][city]\"] option[value=bergen]",
+               "Bergen"
+             )
+
+      refute has_element?(view, "[name=\"run_chore[chore_attrs][city]\"] option[value=lisbon]")
+      assert has_element?(view, "[name=\"run_chore[chore_attrs][city]\"][phx-update=ignore]")
+      refute has_element?(view, "[name=\"run_chore[chore_attrs][district]\"]")
+      assert has_element?(view, ".chore-run-submit-button[disabled]")
+
+      change_dependent_inputs(view, %{"region" => "north", "city" => "oslo"})
+
+      assert has_element?(
+               view,
+               "[name=\"run_chore[chore_attrs][district]\"] option[value=frogner]",
+               "Frogner"
+             )
+
+      change_dependent_inputs(view, %{
+        "region" => "north",
+        "city" => "oslo",
+        "district" => "frogner"
+      })
+
+      refute has_element?(view, ".chore-run-submit-button[disabled]")
+    end
+
+    test "resets dependents when the input they depend on changes" do
+      {:ok, view, _html} = live(build_conn(), "/chores?chore=DependentInputsChore")
+
+      change_dependent_inputs(view, %{"region" => "north"})
+      change_dependent_inputs(view, %{"region" => "north", "city" => "oslo"})
+
+      path =
+        change_dependent_inputs(view, %{
+          "region" => "south",
+          "city" => "oslo",
+          "district" => "frogner"
+        })
+
+      assert has_element?(
+               view,
+               "[name=\"run_chore[chore_attrs][city]\"] option[value=lisbon]",
+               "Lisbon"
+             )
+
+      refute has_element?(view, "[name=\"run_chore[chore_attrs][city]\"] option[selected]")
+      refute has_element?(view, "[name=\"run_chore[chore_attrs][district]\"]")
+      assert has_element?(view, ".chore-run-submit-button[disabled]")
+
+      assert persisted_inputs(path) == %{"region" => "south", "city" => "", "mode" => "summary"}
+    end
+
+    test "replaces a dependent input only when its dependency values change" do
+      {:ok, view, _html} = live(build_conn(), "/chores?chore=DependentInputsChore")
+
+      change_dependent_inputs(view, %{"region" => "north"})
+      city_input_id = city_input_id(view)
+
+      change_dependent_inputs(view, %{"region" => "north", "city" => "oslo"})
+
+      change_dependent_inputs(view, %{"region" => "north", "city" => "oslo", "mode" => "detailed"})
+
+      assert city_input_id(view) == city_input_id
+
+      change_dependent_inputs(view, %{"region" => "south", "city" => "oslo", "mode" => "detailed"})
+
+      refute city_input_id(view) == city_input_id
+    end
+
+    test "shows inputs whose visible? function accepts the dependency values" do
+      {:ok, view, _html} = live(build_conn(), "/chores?chore=DependentInputsChore")
+
+      refute has_element?(view, "[name=\"run_chore[chore_attrs][guests]\"]")
+
+      change_dependent_inputs(view, %{"mode" => "detailed"})
+
+      assert has_element?(view, "[name=\"run_chore[chore_attrs][guests]\"][value=2]")
+
+      change_dependent_inputs(view, %{"mode" => "detailed", "guests" => "50"})
+
+      assert has_element?(
+               view,
+               "[name=\"run_chore[chore_attrs][guests]\"] ~ .chore-form-input-errors-wrapper .alert",
+               "Choose between 1 and 10 guests"
+             )
+
+      path = change_dependent_inputs(view, %{"mode" => "summary", "guests" => "50"})
+
+      refute has_element?(view, "[name=\"run_chore[chore_attrs][guests]\"]")
+      refute Map.has_key?(persisted_inputs(path), "guests")
+    end
+
+    test "restores a persisted cascade after reload" do
+      path =
+        "/chores?" <>
+          Plug.Conn.Query.encode(%{
+            "chore" => "DependentInputsChore",
+            "inputs" => %{"region" => "south", "city" => "lisbon", "district" => "belem"}
+          })
+
+      {:ok, view, _html} = live(build_conn(), path)
+
+      assert has_element?(
+               view,
+               "[name=\"run_chore[chore_attrs][city]\"] option[selected][value=lisbon]"
+             )
+
+      assert has_element?(
+               view,
+               "[name=\"run_chore[chore_attrs][district]\"] option[selected][value=belem]"
+             )
+
+      refute has_element?(view, ".chore-run-submit-button[disabled]")
+    end
+  end
+
+  defp change_dependent_inputs(view, chore_attrs) do
+    render_change(view, "form_changed", %{
+      "run_chore" => %{"chore" => "DependentInputsChore", "chore_attrs" => chore_attrs}
+    })
+
+    assert_patch(view)
+  end
+
+  defp city_input_id(view) do
+    html = view |> element(~s(select[name="run_chore[chore_attrs][city]"])) |> render()
+    [_, id] = Regex.run(~r/ id="([^"]+)"/, html)
+    id
+  end
+
+  defp persisted_inputs(path) do
+    path |> URI.parse() |> Map.fetch!(:query) |> Plug.Conn.Query.decode() |> Map.get("inputs")
+  end
+
   defp assert_persisted_values(view, path, expected) do
     query = path |> URI.parse() |> Map.fetch!(:query) |> Plug.Conn.Query.decode()
 

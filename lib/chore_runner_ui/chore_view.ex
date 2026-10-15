@@ -21,8 +21,6 @@ defmodule ChoreRunnerUI.ChoreView do
         download_plug_path: download_plug_path
       )
 
-  defp select_options(opts), do: Input.select_options(opts)
-
   defp format_error(error) when is_binary(error), do: error
   defp format_error(:not_in_options), do: "Select one of the available options"
   defp format_error(:invalid), do: "Value is invalid"
@@ -30,6 +28,28 @@ defmodule ChoreRunnerUI.ChoreView do
   defp format_error(error), do: inspect(error)
 
   defp input_options(class), do: [class: class, phx_update: "ignore"]
+
+  # Inputs stay `phx-update="ignore"` so URL patches never overwrite browser values. A
+  # dependent input's id changes with its dependency values instead, so LiveView replaces
+  # it with freshly rendered options and value whenever a dependency changes.
+  defp dependent_input_id(form, key, opts, form_values) do
+    case Input.dependencies(opts) do
+      [] ->
+        []
+
+      dependencies ->
+        attrs = Map.get(form_values, "chore_attrs", %{})
+        values = Enum.map(dependencies, &Map.get(attrs, to_string(&1)))
+        [id: "#{Phoenix.HTML.Form.input_id(form, key)}_#{:erlang.phash2(values)}"]
+    end
+  end
+
+  defp label_options(form, key, opts, form_values) do
+    case dependent_input_id(form, key, opts, form_values) do
+      [id: id] -> [class: "chore-form-label", for: id]
+      [] -> [class: "chore-form-label"]
+    end
+  end
 
   defp checkbox_input_options(form, key, browser_managed_checkboxes?) do
     checked =

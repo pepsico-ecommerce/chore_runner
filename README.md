@@ -120,6 +120,30 @@ end
 
 Submitted select values are checked against the current options and converted back to the value type declared by the option.
 
+### Dependent inputs
+
+An input can depend on inputs declared before it with `:depends_on`. A dependent input stays hidden, and is not validated, until every input it depends on is valid. A select options provider with one argument receives the validated values of those inputs, so options can be loaded for the current choice:
+
+```elixir
+def inputs do
+  [
+    selectbox(:region, &region_options/0, prompt: "Choose a region"),
+    selectbox(:city, &city_options/1, depends_on: [:region], prompt: "Choose a city"),
+    selectbox(:district, &district_options/1, depends_on: [:city], prompt: "Choose a district"),
+    selectbox(:mode, [{"Summary", "summary"}, {"Detailed", "detailed"}], default: "summary"),
+    int(:guests, depends_on: [:mode], visible?: &(&1.mode == "detailed"))
+  ]
+end
+
+defp city_options(%{region: region}), do: MyApp.Places.city_options(region)
+```
+
+- Submitted values are validated against the options loaded for the submitted dependency values, both in the UI and in `ChoreRunner.run_chore/3`.
+- `:visible?` receives the same dependency values and hides the input when it returns anything other than `true`.
+- Hidden inputs are left out of the map passed to `validate_inputs/1` and `run/1`, and are not persisted in the URL.
+- When an input changes in the UI, its dependents return to their prompt or default value.
+- Dependencies must be declared earlier in the list and cannot be file inputs. Chores without `:depends_on` behave exactly as before.
+
 Input functions also accept an optional keyword list of options as a second argument. The supported keys are:
 - :description — a description of an input
 - :default — a value used when the caller omits the input and prefilled in the UI

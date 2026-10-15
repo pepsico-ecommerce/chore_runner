@@ -6,13 +6,17 @@ defmodule ChoreRunner.Input do
   @type validator_function ::
           (term() -> {:ok, term()} | :ok | true | {:error, reason} | nil | false)
   @type select_options :: list() | map()
-  @type select_options_provider :: select_options() | (-> select_options())
+  @type dependency_values :: %{atom() => term()}
+  @type select_options_provider ::
+          select_options() | (-> select_options()) | (dependency_values() -> select_options())
   @type input_options :: [
           validators: [validator_function],
           description: String.t(),
           default: term(),
           options: select_options_provider(),
-          prompt: String.t()
+          prompt: String.t(),
+          depends_on: [atom()],
+          visible?: (dependency_values() -> boolean())
         ]
   @type t :: {input_type, atom, input_options}
 
@@ -41,6 +45,47 @@ defmodule ChoreRunner.Input do
     opts
     |> Keyword.fetch!(:options)
     |> resolve_select_options()
+  end
+
+  @doc """
+  Resolves select options for an input whose provider receives the validated values of
+  the inputs listed in `:depends_on`.
+  """
+  @spec select_options(input_options(), dependency_values()) :: select_options()
+  def select_options(opts, dependency_values) do
+    opts
+    |> Keyword.fetch!(:options)
+    |> resolve_select_options(dependency_values)
+  end
+
+  @spec dependencies(input_options()) :: [atom()]
+  def dependencies(opts), do: Keyword.get(opts, :depends_on, [])
+
+  @doc """
+  Returns whether an input with satisfied dependencies should be shown and validated.
+  """
+  @spec visible?(input_options(), dependency_values()) :: boolean()
+  def visible?(opts, dependency_values) do
+    case Keyword.fetch(opts, :visible?) do
+      {:ok, visible?} -> visible?.(dependency_values) == true
+      :error -> true
+    end
+  end
+
+  @doc """
+  Raises when an input declares dependencies the form cannot resolve.
+
+  Dependencies must name non-file inputs declared earlier in the list, which also rules out
+  cycles. Dependency-aware select providers and `:visible?` require `:depends_on`.
+  """
+  @spec validate_dependencies!([t()]) :: :ok
+  def validate_dependencies!(inputs) do
+    Enum.reduce(inputs, %{}, fn {type, name, opts}, declared_types ->
+      validate_input_dependencies!(name, opts, declared_types)
+      Map.put(declared_types, name, type)
+    end)
+
+    :ok
   end
 
   @spec default_values([t()]) :: map()
@@ -111,7 +156,64 @@ defmodule ChoreRunner.Input do
     |> validate_select_options!()
   end
 
+  defp resolve_select_options(provider) when is_function(provider, 1) do
+    raise ArgumentError,
+          "select options provider expects dependency values; declare :depends_on and use select_options/2"
+  end
+
   defp resolve_select_options(options), do: validate_select_options!(options)
+
+  defp resolve_select_options(provider, dependency_values) when is_function(provider, 1) do
+    dependency_values
+    |> provider.()
+    |> validate_select_options!()
+  end
+
+  defp resolve_select_options(provider, _dependency_values), do: resolve_select_options(provider)
+
+  defp validate_input_dependencies!(name, opts, declared_types) do
+    dependencies = dependencies(opts)
+
+    unless is_list(dependencies) and Enum.all?(dependencies, &is_atom/1) do
+      raise ArgumentError,
+            "#{inspect(name)} :depends_on must be a list of input names; got: #{inspect(dependencies)}"
+    end
+
+    Enum.each(dependencies, fn dependency ->
+      case Map.fetch(declared_types, dependency) do
+        {:ok, :file} ->
+          raise ArgumentError,
+                "#{inspect(name)} cannot depend on file input #{inspect(dependency)}"
+
+        {:ok, _type} ->
+          :ok
+
+        :error ->
+          raise ArgumentError,
+                "#{inspect(name)} depends on #{inspect(dependency)}, which must be an input declared before it"
+      end
+    end)
+
+    if dependencies == [] and is_function(Keyword.get(opts, :options), 1) do
+      raise ArgumentError,
+            "#{inspect(name)} has a select options provider that expects dependency values but declares no :depends_on"
+    end
+
+    case Keyword.fetch(opts, :visible?) do
+      :error ->
+        :ok
+
+      {:ok, _visible?} when dependencies == [] ->
+        raise ArgumentError, "#{inspect(name)} declares :visible? without :depends_on"
+
+      {:ok, visible?} when is_function(visible?, 1) ->
+        :ok
+
+      {:ok, visible?} ->
+        raise ArgumentError,
+              "#{inspect(name)} :visible? must be a one-arity function; got: #{inspect(visible?)}"
+    end
+  end
 
   defp validate_select_options!(options) when is_list(options) or is_map(options), do: options
 
