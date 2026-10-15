@@ -24,6 +24,9 @@ defmodule ChoreRunnerUI.ChoreView do
   defp select_options(opts), do: Input.select_options(opts)
 
   defp format_error(error) when is_binary(error), do: error
+  defp format_error(:not_in_options), do: "Select one of the available options"
+  defp format_error(:invalid), do: "Value is invalid"
+  defp format_error(:does_not_exist), do: "File does not exist"
   defp format_error(error), do: inspect(error)
 
   defp input_options(class), do: [class: class, phx_update: "ignore"]
