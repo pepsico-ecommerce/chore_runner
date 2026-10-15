@@ -37,7 +37,9 @@ defmodule ChoreRunnerUI.ChoreLiveTest do
            )
 
     assert has_element?(view, ".chore-run-submit-button[disabled]")
-    assert render(view) =~ "not_in_options"
+    html = render(view)
+    assert html =~ "Select one of the available options"
+    refute html =~ "not_in_options"
   end
 
   test "shows cross-field errors and clears them when either dependent input is corrected" do
@@ -285,7 +287,24 @@ defmodule ChoreRunnerUI.ChoreLiveTest do
     {:ok, view, _html} = live(build_conn(), path)
 
     assert has_element?(view, ".chore-run-submit-button[disabled]")
-    assert render(view) =~ "not_in_options"
+    html = render(view)
+    assert html =~ "Select one of the available options"
+    refute html =~ "not_in_options"
+  end
+
+  test "renders a readable message for invalid persisted number values" do
+    path = "/chores?chore=FormChore&inputs%5Bcount%5D=abc"
+    {:ok, view, _html} = live(build_conn(), path)
+
+    assert has_element?(view, ".chore-run-submit-button[disabled]")
+
+    assert has_element?(
+             view,
+             "#run_chore_chore_attrs_0_count ~ .chore-form-input-errors-wrapper .alert",
+             "Value is invalid"
+           )
+
+    refute render(view) =~ ":invalid"
   end
 
   test "keeps changed form values for chores that do not persist inputs in the URL" do
