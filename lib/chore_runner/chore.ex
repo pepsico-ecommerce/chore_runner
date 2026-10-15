@@ -152,7 +152,7 @@ defmodule ChoreRunner.Chore do
   validated values of its dependencies. `errors` includes cross-field errors from
   `validate_inputs/1`, which runs only when every field is valid.
   """
-  @spec resolve_inputs(t(), map()) :: resolved_inputs()
+  @spec resolve_inputs(%__MODULE__{mod: module()}, map()) :: resolved_inputs()
   def resolve_inputs(%__MODULE__{mod: mod}, input) do
     expected_inputs = mod.inputs()
     :ok = Input.validate_dependencies!(expected_inputs)
