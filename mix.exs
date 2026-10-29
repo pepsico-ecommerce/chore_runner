@@ -62,7 +62,7 @@ defmodule ChoreRunner.MixProject do
     if git!(["branch", "--show-current"]) != "master",
       do: Mix.raise("Releases must be cut from master")
 
-    if git!(["status", "--porcelain"]) != "",
+    if git!(["status", "--porcelain", "--untracked-files=no"]) != "",
       do: Mix.raise("Working tree is not clean")
 
     if git!(["rev-parse", "HEAD"]) != git!(["rev-parse", "origin/master"]),
