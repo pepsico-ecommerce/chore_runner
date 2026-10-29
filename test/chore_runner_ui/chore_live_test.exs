@@ -282,6 +282,13 @@ defmodule ChoreRunnerUI.ChoreLiveTest do
     refute has_element?(reloaded_view, "#run_chore_chore option[value=NonPersistedChore]")
   end
 
+  test "renders phx-change forms with ids" do
+    {:ok, view, _html} = live(build_conn(), "/chores")
+
+    assert has_element?(view, "form#filter_chores[phx-change=filter_form_changed]")
+    assert has_element?(view, "form#run_chore[phx-change=form_changed]")
+  end
+
   test "rejects tampered persisted select values" do
     path = "/chores?chore=FormChore&inputs%5Bdynamic_choice%5D=unknown"
     {:ok, view, _html} = live(build_conn(), path)
