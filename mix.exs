@@ -6,7 +6,7 @@ defmodule ChoreRunner.MixProject do
   def project do
     [
       app: :chore_runner,
-      version: "0.7.0",
+      version: "0.7.1",
       elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -50,11 +50,39 @@ defmodule ChoreRunner.MixProject do
   end
 
   defp aliases do
-    [publish: ["hex.publish", &git_tag/1]]
+    [tag_release: &tag_release/1]
   end
 
-  defp git_tag(_args) do
-    System.cmd("git", ["tag", "v" <> Mix.Project.config()[:version]])
-    System.cmd("git", ["push", "--tags"])
+  # Tags the current commit with the mix.exs version and pushes only that tag.
+  defp tag_release(_args) do
+    tag = "v" <> Mix.Project.config()[:version]
+
+    git!(["fetch", "origin", "master", "--tags"])
+
+    if git!(["branch", "--show-current"]) != "master",
+      do: Mix.raise("Releases must be cut from master")
+
+    if git!(["status", "--porcelain"]) != "",
+      do: Mix.raise("Working tree is not clean")
+
+    if git!(["rev-parse", "HEAD"]) != git!(["rev-parse", "origin/master"]),
+      do: Mix.raise("Local master is not in sync with origin/master")
+
+    if git!(["tag", "-l", tag]) != "",
+      do: Mix.raise("Tag #{tag} already exists")
+
+    unless File.read!("CHANGELOG.md") =~ "## #{tag} (",
+      do: Mix.raise("CHANGELOG.md has no ## #{tag} (YYYY-MM-DD) section")
+
+    git!(["tag", tag])
+    git!(["push", "origin", tag])
+    Mix.shell().info("Pushed #{tag}")
+  end
+
+  defp git!(args) do
+    case System.cmd("git", args, stderr_to_stdout: true) do
+      {output, 0} -> String.trim(output)
+      {output, _} -> Mix.raise("git #{Enum.join(args, " ")} failed:\n#{output}")
+    end
   end
 end

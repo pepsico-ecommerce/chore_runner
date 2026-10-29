@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.7.1 (2026-10-29)
+
 * Added optional `validate_inputs/1` cross-field validation for live forms and programmatic chore execution.
 * Preserve text, number, and select values across URL patches, including partial form-change payloads.
 * Preserve URL-persisted boolean values when LiveView rerenders chore forms.

@@ -16,4 +16,7 @@ Before pushing, run `mix format --check-formatted` and `mix test`.
   1. Rename `## Unreleased` to `## vX.Y.Z (YYYY-MM-DD)`.
   2. Add a new empty `## Unreleased` section above it.
   3. Bump `version` in `mix.exs` to match.
-  4. Run `mix publish` (publishes to Hex, then tags `vX.Y.Z` and pushes the tag).
+  4. Commit and push to `master`, then run `mix tag_release`. It checks that `master` is clean and in sync with
+     `origin/master`, then tags the commit `vX.Y.Z` and pushes only that tag.
+
+Releases are git tags only; we don't publish to Hex. Consumers depend on `tag: "vX.Y.Z"`.
