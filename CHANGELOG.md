@@ -10,6 +10,7 @@
 * Improve file input contrast and display the selected file name above its upload progress.
 * Added dependent inputs: `:depends_on` hides an input until earlier inputs are valid, one-arity select providers load options from their values, and `:visible?` shows an input conditionally.
 * Fixed the `Chore.resolve_inputs/2` spec so Dialyzer accepts the partially built chore struct that `validate_input/1` passes.
+* Added ids to the chore filter and run-chore `phx-change` forms. Input ids are unchanged. ([#27](https://github.com/pepsico-ecommerce/chore_runner/pull/27))
 
 ## v0.7.0 (2026-08-05)
 
